@@ -350,7 +350,7 @@
         if (!uid) {
             _lvBusy = false;
             resetLvBtn(btn);
-            showInfo('未找到当前登录用户ID。请先登录，或打开一次首页/我的地盘后再试');
+            showInfo('未找到当前登录用户ID。请先登录，或打开一次首页/我的地盘后再试', '👤 角色信息');
             return;
         }
         try { console.log('[YH] queryLevel uid=' + uid + ' src=' + src); } catch (e0) {}
@@ -395,7 +395,7 @@
                         var tip = '等级信息请求失败(' + st + ') uid=' + uid;
                         try { tip += '\nlen=' + (html2 ? html2.length : 0); } catch (e1) {}
                         tip += '\n请确认已登录妖火后再试';
-                        showInfo(tip);
+                        showInfo(tip, '👤 角色信息');
                         return;
                     }
                     var nick = parseField(html2, '\u6635\u79f0');
@@ -427,24 +427,24 @@
                                 var posts = pm ? pm[1] : '-', replies = rm ? rm[1] : '-';
                                 var extra = '\n' + L + '\u5e16\u5b50' + R + posts + ':' + 'https://yaohuo.me/bbs/book_list_search.aspx?action=search&key=' + uid + '&type=pub'
                                     + '\n' + L + '\u56de\u590d' + R + replies + ':' + 'https://yaohuo.me/bbs/book_re_my.aspx?touserid=' + uid;
-                                showInfo(baseMsg(extra));
+                                showInfo(baseMsg(extra), '👤 角色信息');
                             } catch (e2) {
-                                showInfo(baseMsg(''));
+                                showInfo(baseMsg(''), '👤 角色信息');
                             }
                             _lvBusy = false;
                             resetLvBtn(btn);
                         },
                         onerror: function() { showInfo(baseMsg('')); _lvBusy = false; resetLvBtn(btn); },
-                        ontimeout: function() { showInfo(baseMsg('')); _lvBusy = false; resetLvBtn(btn); }
+                        ontimeout: function() { showInfo(baseMsg(''), '👤 角色信息'); _lvBusy = false; resetLvBtn(btn); }
                     });
                 } catch (e) {
                     _lvBusy = false;
                     resetLvBtn(btn);
-                    showInfo('解析等级信息失败: ' + (e && e.message ? e.message : e));
+                    showInfo('解析等级信息失败: ' + (e && e.message ? e.message : e), '👤 角色信息');
                 }
             },
-            onerror: function() { _lvBusy = false; resetLvBtn(btn); showInfo('网络错误，无法查询等级'); },
-            ontimeout: function() { _lvBusy = false; resetLvBtn(btn); showInfo('请求超时，请重试'); }
+            onerror: function() { _lvBusy = false; resetLvBtn(btn); showInfo('网络错误，无法查询等级', '👤 角色信息'); },
+            ontimeout: function() { _lvBusy = false; resetLvBtn(btn); showInfo('请求超时，请重试', '👤 角色信息'); }
         });
     }
     function queryLevel(btn) {
@@ -464,7 +464,8 @@
     }
 
     // 信息弹窗
-    function showInfo(msg) {
+    function showInfo(msg, title) {
+        if (!title) title = 'ℹ️ 提示';
         var lines = msg.split('\n');
         var html = lines.map(function(l) {
             var m = l.match(/^【(.+?)】(.+)$/);
@@ -484,7 +485,7 @@
         }).join('');
         var overlay = $('<div class="yh-info-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center"></div>');
         var box = $('<div style="background:#fff;border-radius:12px;padding:0;width:90%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden"></div>');
-        box.append('<div style="padding:14px 16px;background:#1abc9c;color:#fff;font-size:15px;font-weight:bold">👤 角色信息</div>');
+        box.append('<div style="padding:14px 16px;background:#1abc9c;color:#fff;font-size:15px;font-weight:bold">' + title + '</div>');
         box.append('<div style="padding:12px 16px">' + html + '</div>');
         box.append('<div style="padding:10px 16px;text-align:center;border-top:1px solid #eee"><button class="yh-info-close" style="padding:6px 30px;border:1px solid #1abc9c;border-radius:6px;background:#fff;color:#1abc9c;cursor:pointer;font-size:14px">确定</button></div>');
         overlay.append(box);
@@ -1894,16 +1895,16 @@
     }
     function showUpdateResult(remote, err, manual) {
         if (err) {
-            showInfo((manual ? '手动' : '自动') + '检测失败：' + err + '\n当前版本：' + YH_VERSION + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL);
+            showInfo((manual ? '手动' : '自动') + '检测失败：' + err + '\n当前版本：' + YH_VERSION + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL, '🔄 检测更新');
             return;
         }
         var remoteVer = remote.version;
         var c = cmpVersion(remoteVer, YH_VERSION);
         markUpdateChecked();
         if (c > 0) {
-            showInfo('发现新版本！\n【当前】' + YH_VERSION + '\n【最新】' + remoteVer + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL + '\n提示：国内无代理请用「国内安装」链接覆盖安装');
+            showInfo('发现新版本！\n【当前】' + YH_VERSION + '\n【最新】' + remoteVer + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL + '\n提示：国内无代理请用「国内安装」链接覆盖安装', '🔄 检测更新');
         } else if (manual) {
-            showInfo('已是最新\n【当前】' + YH_VERSION + '\n【远程】' + remoteVer + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL);
+            showInfo('已是最新\n【当前】' + YH_VERSION + '\n【远程】' + remoteVer + '\n【国内安装】打开安装:' + YH_UPDATE_URL_CN + '\n【GitHub】打开安装:' + YH_UPDATE_URL, '🔄 检测更新');
         } else {
             try { console.log('[YH] autoUpdate up-to-date', YH_VERSION, remoteVer); } catch (e) {}
         }
@@ -1912,7 +1913,7 @@
         // 手动：先关设置，再出进度/结果，避免多层弹窗叠在一起
         if (manual) {
             try { closeSettingsPanel(); } catch (eClose) {}
-            try { showInfo('正在检测更新…\n当前 v' + YH_VERSION); } catch (e0) {}
+            try { showInfo('正在检测更新…\n当前 v' + YH_VERSION, '🔄 检测更新'); } catch (e0) {}
         }
         fetchRemoteVersion(function(remote, err) {
             // 关掉「正在检测」再出结果
