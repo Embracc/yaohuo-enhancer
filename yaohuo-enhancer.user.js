@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.172
+// @version      0.9.173
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
     };
-    var YH_VERSION = '0.9.172';
+    var YH_VERSION = '0.9.173';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2073,28 +2073,28 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:12px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0"><span>⚙ 设置 <small style="opacity:.85;font-weight:normal">v0.9.172</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px">&times;</span></div><div style="padding:4px 16px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.173</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
                 if (!groups[g] || !groups[g].length) return;
-                // 分屏组仅在 splitView 开启时显示
                 if (g === '分屏' && !S.splitView) return;
-                html += '<div style="font-size:10px;color:#aaa;margin:12px 0 6px;letter-spacing:2px;font-weight:bold">' + groupNames[g] + '</div>';
-                // 浏览/评论：两列网格对齐；界面：主项全宽 + 子项左缩进同一列对齐
-                var useGrid = g !== '界面';
-                html += useGrid
-                    ? '<div style="display:grid;grid-template-columns:1fr 1fr;column-gap:8px;row-gap:2px;align-items:center">'
-                    : '<div style="display:flex;flex-direction:column;gap:2px">';
+                // 卡片开始
+                html += '<div style="margin:10px 0;border-radius:10px;overflow:hidden;border:1px solid #ecf0f1;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.04)">';
+                // 卡片标题
+                html += '<div style="padding:8px 12px;background:#f8fafb;border-bottom:1px solid #ecf0f1;font-size:11px;font-weight:bold;color:#7f8c8d;letter-spacing:1px;display:flex;align-items:center;gap:6px">';
+                var icons = {浏览:'📖', 分屏:'🖥️', 界面:'🎨', 评论:'💬', 更新:'🔄'};
+                html += '<span style="font-size:13px">' + (icons[g]||'') + '</span><span>' + groupNames[g] + '</span></div>';
+                // 列表项
+                html += '<div style="display:flex;flex-direction:column">';
                 groups[g].forEach(function(item) {
                     var isSub = !!item.sub || (item.l && item.l.indexOf('   ') === 0);
                     var label = (item.l || '').replace(/^\s+/, '');
                     var isRange = !!item.range;
-                    var rowStyle = useGrid
-                        ? 'display:flex;align-items:center;min-height:28px;padding:4px 0;cursor:pointer;box-sizing:border-box;width:100%'
-                        : (isSub
-                            ? 'display:flex;align-items:center;min-height:28px;padding:4px 0 4px 0;margin:0 0 0 12px;padding-left:10px;border-left:2px solid #e5e5e5;cursor:pointer;box-sizing:border-box;width:calc(100% - 12px)'
-                            : 'display:flex;align-items:center;min-height:28px;padding:4px 0;cursor:pointer;box-sizing:border-box;width:100%');
+                    // 子项缩进
+                    var padLeft = isSub ? 'padding-left:28px' : '';
+                    var bgHover = 'transition:background .12s';
+                    html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';' + bgHover + ';border-bottom:1px solid #f5f5f5" onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background=''">';
                     if (isRange) {
                         var curVal = (S[item.k] !== undefined ? S[item.k] : 1);
                         var minV = item.min !== undefined ? item.min : 0.05;
@@ -2102,35 +2102,35 @@
                         var stepV = item.step !== undefined ? item.step : 0.01;
                         var isPct = maxV > 1;
                         var displayVal = isPct ? Math.round(curVal) : (stepV >= 1 ? Math.round(curVal) : Math.round(curVal * 100));
-                        var displaySuffix = isPct ? '%' : (stepV < 1 ? '%' : '');
-                        html += '<div style="' + rowStyle + ';flex-wrap:wrap;gap:2px">'
-                            + '<span style="font-size:12px;line-height:1.3;color:#888;flex:1;min-width:0;margin-bottom:2px">' + label + ' <span class="yh-opacity-val" style="font-weight:bold;color:#333">' + displayVal + displaySuffix + '</span></span>'
-                            + '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:100%;height:6px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#eee;border-radius:3px;cursor:pointer">'
-                            + '</div>';
+                        var displaySuffix = isPct ? '' : '%';
+                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</span>';
+                        html += '<span class="yh-opacity-val" style="font-size:11px;font-weight:bold;color:#1abc9c;margin:0 8px;min-width:30px;text-align:right">' + displayVal + displaySuffix + '</span>';
+                        html += '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:90px;height:4px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#e8e8e8;border-radius:2px;cursor:pointer;flex-shrink:0">';
                     } else if (item.color) {
                         var curColor = S[item.k] || '#1abc9c';
-                        html += '<div style="' + rowStyle + ';flex-wrap:wrap;gap:4px">'
-                            + '<span style="font-size:12px;line-height:1.3;color:#888;flex:1;min-width:0">' + label + '</span>'
-                            + '<input type="color" class="yh-set-color" data-key="' + item.k + '" value="' + curColor + '" style="width:36px;height:28px;padding:0;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:none;flex-shrink:0">'
-                            + '</div>';
+                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                        html += '<input type="color" class="yh-set-color" data-key="' + item.k + '" value="' + curColor + '" style="width:28px;height:28px;padding:0;border:2px solid #e8e8e8;border-radius:6px;cursor:pointer;background:none;flex-shrink:0">';
                     } else {
-                        // 复选框固定槽位，保证文字左缘对齐
-                        html += '<label style="' + rowStyle + '">'
-                            + '<span style="display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;flex-shrink:0;margin-right:6px">'
-                            + '<input type="checkbox" class="yh-set" data-key="' + item.k + '" ' + (S[item.k] ? 'checked' : '') + ' data-refresh="' + (item.refresh||'') + '" style="margin:0;width:14px;height:14px;flex-shrink:0;-webkit-appearance:checkbox!important;appearance:checkbox!important;accent-color:#1abc9c">'
-                            + '</span>'
-                            + '<span style="font-size:12px;line-height:1.3;color:#' + (isSub ? '888' : '333') + ';flex:1;min-width:0">' + label + '</span>'
-                            + '</label>';
+                        var checked = S[item.k] ? 'checked' : '';
+                        var isOn = S[item.k] ? 1 : 0;
+                        html += '<span style="font-size:12px;color:#' + (isSub ? '888' : '333') + ';flex:1;min-width:0">' + label + '</span>';
+                        // Toggle switch
+                        html += '<label style="position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;cursor:pointer">';
+                        html += '<input type="checkbox" class="yh-set" data-key="' + item.k + '" ' + checked + ' data-refresh="' + (item.refresh||'') + '" style="opacity:0;width:0;height:0;position:absolute">';
+                        html += '<span class="yh-toggle-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isOn ? '#1abc9c' : '#d5d5d5') + ';border-radius:20px;transition:background .25s"></span>';
+                        html += '<span class="yh-toggle-knob" style="position:absolute;content:\"\";height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:' + (isOn ? 'translateX(14px)' : 'translateX(0)') + '"></span>';
+                        html += '</label>';
                     }
+                    html += '</div>';
                 });
-                html += '</div>';
+                html += '</div></div>';
             });
-            // 手动检测更新按钮
-            html += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #f0f0f0">';
-            html += '<div style="font-size:11px;color:#999;margin-bottom:8px">当前版本 v' + YH_VERSION + ' · Embrace/19299</div>';
-            html += '<button type="button" class="yh-check-update" style="width:100%;height:36px;border:none;border-radius:8px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">🔍 手动检测更新</button>';
-            html += '<a class="yh-update-link" href="' + YH_UPDATE_URL_CN + '?_=' + Date.now() + '" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;font-size:12px;color:#1abc9c;text-decoration:none">国内安装地址（推荐）</a>';
-            html += '<a class="yh-update-link-gh" href="' + YH_UPDATE_URL + '?_=' + Date.now() + '" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:6px;font-size:11px;color:#888;text-decoration:none">GitHub raw（需代理）</a>';
+            // 底部：版本 + 更新按钮
+            html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border:1px solid #ecf0f1;background:#fafcfe;text-align:center">';
+            html += '<div style="font-size:11px;color:#aaa;margin-bottom:8px">v' + YH_VERSION + ' · Embrace/19299</div>';
+            html += '<button type="button" class="yh-check-update" style="width:100%;height:36px;border:none;border-radius:8px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;transition:opacity .2s;box-shadow:0 2px 8px rgba(26,188,156,.25)">🔍 手动检测更新</button>';
+            html += '<a class="yh-update-link" href="' + YH_UPDATE_URL_CN + '?_=' + Date.now() + '" target="_blank" rel="noopener" style="display:block;margin-top:8px;font-size:12px;color:#1abc9c;text-decoration:none">国内安装地址（推荐）</a>';
+            html += '<a class="yh-update-link-gh" href="' + YH_UPDATE_URL + '?_=' + Date.now() + '" target="_blank" rel="noopener" style="display:block;margin-top:4px;font-size:11px;color:#bbb;text-decoration:none">GitHub raw（需代理）</a>';
             html += '</div>';
             html += '</div>';
             box.innerHTML = html;
@@ -2142,12 +2142,23 @@
             // 自动保存：checkbox 变动即保存，部分选项自动刷新页面
             box.querySelectorAll('.yh-set').forEach(function(el) {
                 el.addEventListener('change', function() {
-                    S[el.getAttribute('data-key')] = el.checked ? 1 : 0;
+                    var on = el.checked ? 1 : 0;
+                    S[el.getAttribute('data-key')] = on;
                     save();
+                    // 更新切换开关视觉
+                    var label = el.parentNode;
+                    if (label) {
+                        var slider = label.querySelector('.yh-toggle-slider');
+                        var knob = label.querySelector('.yh-toggle-knob');
+                        if (slider) slider.style.background = on ? '#1abc9c' : '#d5d5d5';
+                        if (knob) knob.style.transform = on ? 'translateX(14px)' : 'translateX(0)';
+                    }
                     if (el.getAttribute('data-refresh') === '1') {
                         setTimeout(function() { location.reload(); }, 200);
                     }
                 });
+                // 初始同步（确保刷新页面后视觉正确）
+                el.dispatchEvent(new Event('change'));
             });
             box.querySelectorAll('.yh-set-range').forEach(function(el) {
                 function updateRange() {
@@ -2413,5 +2424,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.172 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.173 by Embrace/19299');
 })();
