@@ -2164,8 +2164,15 @@
                         setTimeout(function() { location.reload(); }, 200);
                     }
                 });
-                // 初始同步（确保刷新页面后视觉正确）
-                el.dispatchEvent(new Event('change'));
+                // 初始同步视觉
+                var label = el.parentNode;
+                if (label) {
+                    var on = el.checked ? 1 : 0;
+                    var slider = label.querySelector('.yh-toggle-slider');
+                    var knob = label.querySelector('.yh-toggle-knob');
+                    if (slider) slider.style.background = on ? '#1abc9c' : '#d5d5d5';
+                    if (knob) knob.style.transform = on ? 'translateX(14px)' : 'translateX(0)';
+                }
             });
             box.querySelectorAll('.yh-set-range').forEach(function(el) {
                 function updateRange() {
