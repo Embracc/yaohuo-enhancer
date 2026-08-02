@@ -2093,8 +2093,7 @@
                     var isRange = !!item.range;
                     // 子项缩进
                     var padLeft = isSub ? 'padding-left:28px' : '';
-                    var bgHover = 'transition:background .12s';
-                    html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';' + bgHover + ';border-bottom:1px solid #f5f5f5" onmouseenter="this.style.background='#fafcfe'" onmouseleave="this.style.background=''">';
+                                        html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';border-bottom:1px solid #f5f5f5;transition:background .12s" class="yh-setting-row">';
                     if (isRange) {
                         var curVal = (S[item.k] !== undefined ? S[item.k] : 1);
                         var minV = item.min !== undefined ? item.min : 0.05;
@@ -2133,6 +2132,14 @@
             html += '<a class="yh-update-link-gh" href="' + YH_UPDATE_URL + '?_=' + Date.now() + '" target="_blank" rel="noopener" style="display:block;margin-top:4px;font-size:11px;color:#bbb;text-decoration:none">GitHub raw（需代理）</a>';
             html += '</div>';
             html += '</div>';
+            // 设置面板样式
+            var _styleSheet = document.getElementById('yh-settings-style');
+            if (!_styleSheet) {
+                _styleSheet = document.createElement('style');
+                _styleSheet.id = 'yh-settings-style';
+                _styleSheet.textContent = '.yh-setting-row:hover{background:#f5f8fc}';
+                document.head.appendChild(_styleSheet);
+            }
             box.innerHTML = html;
             overlay.appendChild(box);
             document.body.appendChild(overlay);
