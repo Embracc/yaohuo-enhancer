@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.175
+// @version      0.9.176
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
     };
-    var YH_VERSION = '0.9.175';
+    var YH_VERSION = '0.9.176';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -491,15 +491,10 @@
     function showLevelInfo(nick, uid, crystal, exp, level, posts, replies, online, regTime) {
         var overlay = $('<div class="yh-info-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box"></div>');
         var box = $('<div style="background:#fff;border-radius:14px;padding:0;width:90%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden"></div>');
-        // 头像区域
-        box.append('<div style="padding:20px 16px 14px;background:linear-gradient(135deg,#1abc9c,#0e9c7e);color:#fff;text-align:center">'
-            + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px;border:2px solid rgba(255,255,255,.25)">\uD83D\uDC64</div>'
-            + '<div style="font-size:18px;font-weight:bold">' + (nick || '-') + '</div>'
-            + '<div style="font-size:12px;opacity:.75;margin-top:2px">ID: ' + String(uid) + '</div>'
-            + '</div>');
         function esc(s) { return String(s || '-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-        function row(icon, label, contentHtml) {
-            return '<div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;transition:background .12s" class="yh-lv-row">'
+        function row(icon, label, contentHtml, noBorder) {
+            var border = noBorder ? '' : 'border-bottom:1px solid #f0f0f0';
+            return '<div style="display:flex;align-items:center;padding:10px 16px;' + border + ';transition:background .12s" class="yh-lv-row">'
                 + '<span style="font-size:15px;width:26px;text-align:center;flex-shrink:0">' + icon + '</span>'
                 + '<span style="flex:1;color:#888;font-size:13px;margin-left:10px">' + label + '</span>'
                 + contentHtml + '</div>';
@@ -515,7 +510,7 @@
             dataHtml += row('\uD83D\uDCAC', '\u56DE\u590D', '<a href="https://yaohuo.me/bbs/book_re_my.aspx?touserid=' + uid + '" target="_blank" style="color:#1abc9c;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px">' + esc(replies) + ' <span style="font-size:10px">\u2192</span></a>');
         }
         dataHtml += row('\u23F1\uFE0F', '\u7D2F\u8BA1\u5728\u7EBF', '<span style="color:#555;font-size:14px">' + esc(online) + '</span>');
-        dataHtml += row('\uD83D\uDCC5', '\u6CE8\u518C\u65F6\u95F4', '<span style="color:#555;font-size:14px">' + esc(regTime) + '</span>');
+        dataHtml += row('\uD83D\uDCC5', '\u6CE8\u518C\u65F6\u95F4', '<span style="color:#555;font-size:14px">' + esc(regTime) + '</span>', true);
         // 样式
         var styleEl = document.getElementById('yh-lv-style');
         if (!styleEl) {
@@ -532,7 +527,7 @@
         overlay.on('click', function(e) { if (e.target === overlay[0]) overlay.remove(); });
     }
 
-    // 4. 自动加载// 4. 自动加载// 4. 自动加载（列表滚动加载 + 帖子进入后加载全部评论）
+    // 4. 自动加载（列表滚动加载 + 帖子进入后加载全部评论）
     var _lastLoad = 0;
     var _allCommentsState = { loading: false, done: false, pid: '' };
     var _lcRetry = 0; // 防止无限循环
@@ -2112,7 +2107,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.175</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.176</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2477,5 +2472,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.175 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.176 by Embrace/19299');
 })();
