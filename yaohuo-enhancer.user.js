@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.174
+// @version      0.9.175
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
     };
-    var YH_VERSION = '0.9.174';
+    var YH_VERSION = '0.9.175';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -402,17 +402,11 @@
                     var idShow = parseField(html2, 'ID\u53f7');
                     if (!idShow || idShow === '-') idShow = String(uid);
                     if (/^\d+$/.test(idShow)) { uid = idShow; cacheMyUid(uid); }
-                    var baseMsg = function(extra) {
-                        var s = L + '\u6635\u79f0' + R + (nick || '-')
-                            + '\n' + L + 'ID' + R + idShow
-                            + '\n' + L + '\u5996\u6676' + R + parseField(html2, '\u5996\u6676') + ':' + 'https://yaohuo.me/bbs/banklist.aspx?key=' + uid
-                            + '\n' + L + '\u7ecf\u9a8c' + R + parseField(html2, '\u7ecf\u9a8c') + ':' + 'https://yaohuo.me/bbs/tolvlinfo.aspx'
-                            + '\n' + L + '\u7b49\u7ea7' + R + parseField(html2, '\u7b49\u7ea7');
-                        if (extra) s += extra;
-                        s += '\n' + L + '\u7d2f\u8ba1\u5728\u7ebf' + R + parseField(html2, '\u7d2f\u8ba1\u5728\u7ebf')
-                            + '\n' + L + '\u6ce8\u518c\u65f6\u95f4' + R + parseField(html2, '\u6ce8\u518c\u65f6\u95f4');
-                        return s;
-                    };
+                                        var crystal = parseField(html2, '妖晶');
+                    var exp = parseField(html2, '经验');
+                    var level = parseField(html2, '等级');
+                    var online = parseField(html2, '累计在线');
+                    var regTime = parseField(html2, '注册时间');
                     xhr({
                         method: 'GET',
                         url: '/bbs/userinfo.aspx?touserid=' + encodeURIComponent(String(uid)),
@@ -420,22 +414,20 @@
                         onload: function(res3) {
                             try {
                                 var html3 = res3.responseText || '';
-                                var pm = /class=["']?label["']?\s*>\s*\u5e16\u5b50[\s\S]{0,120}?class=["']?value["']?\s*>\s*(\d+)/.exec(html3)
-                                    || /class="label">\u5e16\u5b50<[^<]*<[^>]*class="value">(\d+)/.exec(html3);
-                                var rm = /class=["']?label["']?\s*>\s*\u56de\u590d[\s\S]{0,120}?class=["']?value["']?\s*>\s*(\d+)/.exec(html3)
-                                    || /class="label">\u56de\u590d<[^<]*<[^>]*class="value">(\d+)/.exec(html3);
-                                var posts = pm ? pm[1] : '-', replies = rm ? rm[1] : '-';
-                                var extra = '\n' + L + '\u5e16\u5b50' + R + posts + ':' + 'https://yaohuo.me/bbs/book_list_search.aspx?action=search&key=' + uid + '&type=pub'
-                                    + '\n' + L + '\u56de\u590d' + R + replies + ':' + 'https://yaohuo.me/bbs/book_re_my.aspx?touserid=' + uid;
-                                showInfo(baseMsg(extra), '👤 角色信息');
+                                var pm = /class=["']?label["']?\s*>\s*帖子[\s\S]{0,120}?class=["']?value["']?\s*>\s*(\d+)/.exec(html3)
+                                    || /class="label">帖子<[^<]*<[^>]*class="value">(\d+)/.exec(html3);
+                                var rm = /class=["']?label["']?\s*>\s*回复[\s\S]{0,120}?class=["']?value["']?\s*>\s*(\d+)/.exec(html3)
+                                    || /class="label">回复<[^<]*<[^>]*class="value">(\d+)/.exec(html3);
+                                var posts = pm ? pm[1] : undefined, replies = rm ? rm[1] : undefined;
+                                showLevelInfo(nick || '-', idShow, uid, crystal, exp, level, posts, replies, online, regTime);
                             } catch (e2) {
-                                showInfo(baseMsg(''), '👤 角色信息');
+                                showLevelInfo(nick || '-', idShow, uid, crystal, exp, level, undefined, undefined, online, regTime);
                             }
                             _lvBusy = false;
                             resetLvBtn(btn);
                         },
-                        onerror: function() { showInfo(baseMsg('')); _lvBusy = false; resetLvBtn(btn); },
-                        ontimeout: function() { showInfo(baseMsg(''), '👤 角色信息'); _lvBusy = false; resetLvBtn(btn); }
+                        onerror: function() { showLevelInfo(nick || '-', idShow, uid, crystal, exp, level, undefined, undefined, online, regTime); _lvBusy = false; resetLvBtn(btn); },
+                        ontimeout: function() { showLevelInfo(nick || '-', idShow, uid, crystal, exp, level, undefined, undefined, online, regTime); _lvBusy = false; resetLvBtn(btn); }
                     });
                 } catch (e) {
                     _lvBusy = false;
@@ -494,7 +486,53 @@
         overlay.on('click', function(e) { if (e.target === overlay[0]) overlay.remove(); });
     }
 
-    // 4. 自动加载（列表滚动加载 + 帖子进入后加载全部评论）
+    // 等级信息弹窗（美化版）
+    // 等级信息弹窗（美化版）
+    function showLevelInfo(nick, uid, crystal, exp, level, posts, replies, online, regTime) {
+        var overlay = $('<div class="yh-info-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box"></div>');
+        var box = $('<div style="background:#fff;border-radius:14px;padding:0;width:90%;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden"></div>');
+        // 头像区域
+        box.append('<div style="padding:20px 16px 14px;background:linear-gradient(135deg,#1abc9c,#0e9c7e);color:#fff;text-align:center">'
+            + '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px;border:2px solid rgba(255,255,255,.25)">\uD83D\uDC64</div>'
+            + '<div style="font-size:18px;font-weight:bold">' + (nick || '-') + '</div>'
+            + '<div style="font-size:12px;opacity:.75;margin-top:2px">ID: ' + String(uid) + '</div>'
+            + '</div>');
+        function esc(s) { return String(s || '-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function row(icon, label, contentHtml) {
+            return '<div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f0f0f0;transition:background .12s" class="yh-lv-row">'
+                + '<span style="font-size:15px;width:26px;text-align:center;flex-shrink:0">' + icon + '</span>'
+                + '<span style="flex:1;color:#888;font-size:13px;margin-left:10px">' + label + '</span>'
+                + contentHtml + '</div>';
+        }
+        var dataHtml = '';
+        dataHtml += row('\uD83E\uDE99', '\u5996\u6676', '<a href="https://yaohuo.me/bbs/banklist.aspx?key=' + uid + '" target="_blank" style="color:#1abc9c;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px">' + esc(crystal) + '<span style="font-size:10px">\u2192</span></a>');
+        dataHtml += row('\u2B50', '\u7ECF\u9A8C', '<a href="https://yaohuo.me/bbs/tolvlinfo.aspx" target="_blank" style="color:#1abc9c;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px">' + esc(exp) + '<span style="font-size:10px">\u2192</span></a>');
+        dataHtml += row('\uD83C\uDF1F', '\u7B49\u7EA7', '<span style="color:#f39c12;font-size:14px;font-weight:600">' + esc(level) + '</span>');
+        if (posts !== undefined) {
+            dataHtml += row('\uD83D\uDCDD', '\u5E16\u5B50', '<a href="https://yaohuo.me/bbs/book_list_search.aspx?action=search&key=' + uid + '&type=pub" target="_blank" style="color:#1abc9c;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px">' + esc(posts) + ' <span style="font-size:10px">\u2192</span></a>');
+        }
+        if (replies !== undefined) {
+            dataHtml += row('\uD83D\uDCAC', '\u56DE\u590D', '<a href="https://yaohuo.me/bbs/book_re_my.aspx?touserid=' + uid + '" target="_blank" style="color:#1abc9c;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;gap:3px">' + esc(replies) + ' <span style="font-size:10px">\u2192</span></a>');
+        }
+        dataHtml += row('\u23F1\uFE0F', '\u7D2F\u8BA1\u5728\u7EBF', '<span style="color:#555;font-size:14px">' + esc(online) + '</span>');
+        dataHtml += row('\uD83D\uDCC5', '\u6CE8\u518C\u65F6\u95F4', '<span style="color:#555;font-size:14px">' + esc(regTime) + '</span>');
+        // 样式
+        var styleEl = document.getElementById('yh-lv-style');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'yh-lv-style';
+            styleEl.textContent = '.yh-lv-row:hover{background:#f5f8fc}.yh-lv-close:hover{background:#e8f8f5!important}';
+            document.head.appendChild(styleEl);
+        }
+        box.append('<div>' + dataHtml + '</div>');
+        box.append('<div style="padding:10px 16px;text-align:center;border-top:1px solid #eee"><button class="yh-info-close yh-lv-close" style="padding:6px 30px;border:1px solid #1abc9c;border-radius:6px;background:#fff;color:#1abc9c;cursor:pointer;font-size:14px;transition:all .15s">\u786E\u5B9A</button></div>');
+        overlay.append(box);
+        $('body').append(overlay);
+        overlay.find('.yh-info-close').on('click', function() { overlay.remove(); });
+        overlay.on('click', function(e) { if (e.target === overlay[0]) overlay.remove(); });
+    }
+
+    // 4. 自动加载// 4. 自动加载// 4. 自动加载（列表滚动加载 + 帖子进入后加载全部评论）
     var _lastLoad = 0;
     var _allCommentsState = { loading: false, done: false, pid: '' };
     var _lcRetry = 0; // 防止无限循环
@@ -2074,7 +2112,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.174</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.175</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2439,5 +2477,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.174 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.175 by Embrace/19299');
 })();
