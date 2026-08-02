@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.171
+// @version      0.9.172
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
     };
-    var YH_VERSION = '0.9.171';
+    var YH_VERSION = '0.9.172';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2057,7 +2057,7 @@
                 {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1},
                 {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1},
                 // 评论
-                {k:'loadAll', l:'📥 进入加载全部评论', g:'评论'},
+                {k:'loadAll', l:'📥 加载全部评论', g:'评论'},
                 {k:'threadView', l:'📋 楼中楼整理', g:'评论'},
                 {k:'repeat', l:'🔁 复读机', g:'评论'},
                 {k:'fillReply', l:'📋 复制评论', g:'评论', sub:1},
@@ -2073,7 +2073,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:12px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0"><span>⚙ 设置 <small style="opacity:.85;font-weight:normal">v0.9.171</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px">&times;</span></div><div style="padding:4px 16px 14px">';
+            var html = '<div style="padding:12px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0"><span>⚙ 设置 <small style="opacity:.85;font-weight:normal">v0.9.172</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px">&times;</span></div><div style="padding:4px 16px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2277,7 +2277,7 @@
         overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:zoom-out;-webkit-user-select:none;user-select:none;touch-action:none;';
         var img = document.createElement('img');
         img.src = src;
-        img.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:4px;box-shadow:0 4px 30px rgba(0,0,0,.5);transition:transform .2s ease;cursor:grab;';
+        img.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:4px;box-shadow:0 4px 30px rgba(0,0,0,.5);transition:transform .2s ease;cursor:grab;will-change:transform;';
         img.draggable = false;
         overlay.appendChild(img);
         document.body.appendChild(overlay);
@@ -2301,6 +2301,7 @@
             dragStartX = e.clientX; dragStartY = e.clientY;
             dragOX = originX; dragOY = originY;
             img.style.cursor = 'grabbing';
+            img.style.transition = 'none'; // 拖拽时取消过渡，丝滑跟随
         });
         document.addEventListener('mousemove', function(e) {
             if (!dragging) return;
@@ -2312,7 +2313,11 @@
             applyTransform();
         });
         document.addEventListener('mouseup', function() {
-            if (dragging) { dragging = false; img.style.cursor = 'grab'; }
+            if (dragging) {
+                dragging = false;
+                img.style.cursor = 'grab';
+                img.style.transition = 'transform .2s ease'; // 恢复过渡
+            }
         });
         // 点图片关闭（第二次点击退出；拖拽后不触发关闭）
         img.addEventListener('click', function(e) {
@@ -2408,5 +2413,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.171 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.172 by Embrace/19299');
 })();
