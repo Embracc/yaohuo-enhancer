@@ -3,7 +3,7 @@
 面向 [妖火网](https://www.yaohuo.me) 的油猴 / VIA 用户脚本：列表浏览、分屏预览、评论增强、发帖 UBB/图床、等级查询、自动更新检测等。  
 **无 `@grant` / 无 `@require`**，自带迷你 jQuery，兼容 VIA 等轻量环境。作者：**Embrace（ID:19299）**。
 
-当前版本：**v0.9.183**
+当前版本：**v0.9.184**
 
 ---
 
@@ -53,6 +53,10 @@ https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo
 ## 更新日志
 
 按里程碑整理；细碎样式/选择器/日志类修补已合并进对应大版本，不再逐条罗列。
+
+### v0.9.184 — 时间计算改用 Date.UTC 避免时区干扰
+
+- 🐛 `Date.UTC` 返回 UTC 毫秒，与本地时区无关，天数计算只受年月日影响
 
 ### v0.9.183 — 修复列表时间显示跨年帖误判
 
