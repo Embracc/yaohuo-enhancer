@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.177
+// @version      0.9.178
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
     };
-    var YH_VERSION = '0.9.177';
+    var YH_VERSION = '0.9.178';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -491,7 +491,7 @@
         overlay.append(box);
         $('body').append(overlay);
         overlay.find('.yh-info-close').on('click', function() { overlay.remove(); });
-        overlay.on('click', function(e) { if (e.target === overlay[0]) overlay.remove(); });
+        overlay.on('click', function(e) { if (e.target.classList && e.target.classList.contains('yh-info-overlay')) overlay.remove(); });
     }
 
     // 4. 自动加载（列表滚动加载 + 帖子进入后加载全部评论）
@@ -1568,7 +1568,7 @@
         var bar = document.createElement('div');
         bar.className = 'yh-ubb-bar';
         // 横向一排对齐，不换行优先；小屏可横向滚动
-        bar.style.cssText = 'margin:8px 0 10px;padding:8px 10px;background:linear-gradient(180deg,#f7fffb,#eefaf6);border:1px solid #b8e6d8;border-radius:10px;box-shadow:0 1px 4px rgba(26,188,156,.12);position:relative;z-index:20;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;box-sizing:border-box;';
+        bar.style.cssText = 'margin:8px 0 10px;padding:8px 10px;background:linear-gradient(180deg,#f7fffb,#eefaf6);border:1px solid #b8e6d8;border-radius:10px;box-shadow:0 1px 4px rgba(26,188,156,.12);position:relative;z-index:20;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;box-sizing:border-box;';
 
         var tools = [
             {t:'UBB', c:'#1abc9c', act:'panel'},
@@ -2074,7 +2074,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.177</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.178</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2439,5 +2439,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.177 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.178 by Embrace/19299');
 })();
