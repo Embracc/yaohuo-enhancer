@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.178
+// @version      0.9.179
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -146,9 +146,9 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
-        fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1,
+        fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
     };
-    var YH_VERSION = '0.9.178';
+    var YH_VERSION = '0.9.179';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2045,6 +2045,7 @@
                 // 浏览
                 {k:'newTab', l:'🔗 新标签打开', g:'浏览', refresh:1},
                 {k:'splitView', l:'📺 分屏预览', g:'浏览', refresh:1},
+                {k:'floatPreview', l:'🪟 浮窗预览', g:'浏览', refresh:1},
                 {k:'showTime', l:'🕐 列表时间显示', g:'浏览', sub:1},
                 // 分屏（仅分屏开启时显示）
                 {k:'splitRatio', l:'📐 左侧占比%', g:'分屏', range:1, min:20, max:60, step:1, dep:'splitView'},
@@ -2074,7 +2075,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.178</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.179</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2231,6 +2232,79 @@
         host.appendChild(btn);
     }
     function initSettings() { if (inIframe) return; ensureSettingsBtn(); }
+
+    // 8.5 浮窗预览（类似分屏，但列表置底+遮罩，右侧悬浮置顶）
+    var _floatBound = false;
+    function f_floatPreview() {
+        if (!S.floatPreview || inIframe) return;
+        if (!isList()) return;
+        if (_floatBound) return;
+        _floatBound = true;
+        document.addEventListener('click', function(e) {
+            if (!S.floatPreview) return;
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
+            var el = e.target;
+            while (el && el !== document && el.nodeType === 1) {
+                if (el.tagName === 'A') break;
+                el = el.parentNode;
+            }
+            if (!el || el.tagName !== 'A') return;
+            var href = el.getAttribute('href') || '';
+            if (!isPostLink(href)) return;
+            if (el.closest && el.closest('.yh-float-panel')) return;
+            if (el.closest && el.closest('.yh-float-overlay')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            showFloatPanel(href);
+        }, true);
+    }
+    function showFloatPanel(url) {
+        if (url.indexOf('http') !== 0) {
+            try { url = new URL(url, location.origin).href; } catch(e) { return; }
+        }
+        // 列表置底
+        window.scrollTo(0, document.documentElement.scrollHeight);
+        // 遮罩
+        if (!document.querySelector('.yh-float-overlay')) {
+            var ov = document.createElement('div');
+            ov.className = 'yh-float-overlay';
+            ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483001;background:rgba(0,0,0,.45);cursor:pointer';
+            ov.addEventListener('click', hideFloatPanel);
+            document.body.appendChild(ov);
+        }
+        // 浮窗
+        if (!document.querySelector('.yh-float-panel')) {
+            var panel = document.createElement('div');
+            panel.className = 'yh-float-panel';
+            panel.style.cssText = 'position:fixed;top:10px;right:10px;width:55vw;max-width:700px;height:calc(100vh - 20px);z-index:2147483002;background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden;border:1px solid #e0e0e0';
+            panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #eee;background:#f9f9f9;flex-shrink:0"><span class="yh-float-title" style="font-size:14px;font-weight:bold;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px">\u52A0\u8F7D\u4E2D...</span><span class="yh-float-close" style="cursor:pointer;font-size:20px;color:#999;line-height:1;padding:0 4px;flex-shrink:0">&times;</span></div><iframe class="yh-float-iframe" style="flex:1;width:100%;border:none;background:#fff"></iframe>';
+            panel.querySelector('.yh-float-close').addEventListener('click', hideFloatPanel);
+            document.body.appendChild(panel);
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') hideFloatPanel(); });
+        }
+        var titleEl = document.querySelector('.yh-float-title');
+        var iframe = document.querySelector('.yh-float-iframe');
+        if (titleEl) titleEl.textContent = '\u52A0\u8F7D\u4E2D...';
+        if (iframe) {
+            iframe.src = url;
+            iframe.onload = function() {
+                try {
+                    var doc = this.contentDocument || this.contentWindow.document;
+                    var t = doc.title;
+                    if (t && titleEl) titleEl.textContent = t;
+                    var style = doc.createElement('style');
+                    style.textContent = '.newMessage,.title,.subtitle2,.btBox,.nexttitle,.footer,.list{display:none!important} body{max-width:100%!important;margin:0!important;padding:8px!important;overscroll-behavior:contain!important} html{overscroll-behavior:contain!important}';
+                    doc.head.appendChild(style);
+                } catch(e) {}
+            };
+        }
+    }
+    function hideFloatPanel() {
+        var ov = document.querySelector('.yh-float-overlay');
+        if (ov) ov.remove();
+        var panel = document.querySelector('.yh-float-panel');
+        if (panel) panel.remove();
+    }
 
     // 9. 列表时间显示
     function f_timeDisplay() {
@@ -2412,6 +2486,7 @@
         safe(f_ubb);
         if (!inIframe) safe(f_splitView);
         if (!inIframe) safe(f_splitStyleCheck);
+        if (!inIframe) safe(f_floatPreview);
         safe(f_timeDisplay);
         safe(f_imgZoom);
     }
@@ -2439,5 +2514,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.178 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.179 by Embrace/19299');
 })();
