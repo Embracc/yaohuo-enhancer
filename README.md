@@ -3,7 +3,7 @@
 面向 [妖火网](https://www.yaohuo.me) 的油猴 / VIA 用户脚本：列表浏览、分屏预览、评论增强、发帖 UBB/图床、等级查询、自动更新检测等。  
 **无 `@grant` / 无 `@require`**，自带迷你 jQuery，兼容 VIA 等轻量环境。作者：**Embrace（ID:19299）**。
 
-当前版本：**v0.9.177**
+当前版本：**v0.9.178**
 
 ---
 
@@ -53,6 +53,11 @@ https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo
 ## 更新日志
 
 按里程碑整理；细碎样式/选择器/日志类修补已合并进对应大版本，不再逐条罗列。
+
+### v0.9.178 — 修复LV弹窗闪退，UBB工具栏居中
+
+- 🐛 LV弹窗点击关闭改为 class 名检测，避免引用比较在 DOM 重排后失效导致偶然闪退
+- 🎨 UBB 工具栏按钮居中排列（UBB / 上传图片 / 上传视频 / +30）
 
 ### v0.9.177 — 恢复LV弹窗为通用 `showInfo` 渲染
 
