@@ -3,7 +3,7 @@
 面向 [妖火网](https://www.yaohuo.me) 的油猴 / VIA 用户脚本：列表浏览、分屏预览、评论增强、发帖 UBB/图床、等级查询、自动更新检测等。  
 **无 `@grant` / 无 `@require`**，自带迷你 jQuery，兼容 VIA 等轻量环境。作者：**Embrace（ID:19299）**。
 
-当前版本：**v0.9.189**
+当前版本：**v0.9.190**
 
 ---
 
@@ -53,6 +53,11 @@ https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo
 ## 更新日志
 
 按里程碑整理；细碎样式/选择器/日志类修补已合并进对应大版本，不再逐条罗列。
+
+### v0.9.190 — 修复语法错误导致脚本无法加载
+
+- 🐛 patch 工具将两行代码合并为一行时保留了 `\n` 字面量而非换行，导致 JS 语法错误
+- 🐛 修复：将 `\n` 替换为实际换行，还原为两行独立语句
 
 ### v0.9.189 — 适配 iPhone/VIA 浏览器
 
