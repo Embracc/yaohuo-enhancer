@@ -3,7 +3,7 @@
 面向 [妖火网](https://www.yaohuo.me) 的油猴 / VIA 用户脚本：列表浏览、分屏预览、评论增强、发帖 UBB/图床、等级查询、自动更新检测等。  
 **无 `@grant` / 无 `@require`**，自带迷你 jQuery，兼容 VIA 等轻量环境。作者：**Embrace（ID:19299）**。
 
-当前版本：**v0.9.188**
+当前版本：**v0.9.189**
 
 ---
 
@@ -53,6 +53,11 @@ https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo
 ## 更新日志
 
 按里程碑整理；细碎样式/选择器/日志类修补已合并进对应大版本，不再逐条罗列。
+
+### v0.9.189 — 适配 iPhone/VIA 浏览器
+
+- 📱 设置按钮 `touch-action: none` → `manipulation`，解决 iPhone 上按钮不可点击问题
+- 📱 增加 `-webkit-tap-highlight-color: transparent`，优化触摸反馈
 
 ### v0.9.188 — 恢复天数计算显示
 
