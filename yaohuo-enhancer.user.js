@@ -1,12 +1,16 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.192
+// @version      0.9.193
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
 // @match        *://*.yaohuo.me/*
 // @run-at       document-end
+// @grant        none
+// @icon         data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>
+// @downloadURL  https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js
+// @updateURL    https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js
 // ==/UserScript==
 
 (function() {
@@ -148,7 +152,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
     };
-    var YH_VERSION = '0.9.192';
+    var YH_VERSION = '0.9.193';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -885,6 +889,7 @@
     function submitRepeat(text) {
         var ta = findReplyFormTextarea();
         if (!ta) { alert('未找到回复框'); return false; }
+        ta.value = '';
         ta.value = text;
         try { ta.focus(); } catch (e0) {}
         try { ta.dispatchEvent(new Event('input', {bubbles:true})); } catch (e1) {}
@@ -896,18 +901,27 @@
         } catch (e3) {}
         var form = ta.closest('form') || document.querySelector('form[name="f"]') || document.querySelector('form');
         if (!form) { alert('未找到回复表单'); return false; }
-        var sub = form.querySelector('input[type="submit"][name="g"]') ||
-            form.querySelector('input[name="g"]') ||
-            form.querySelector('input[type="submit"]') ||
-            form.querySelector('button[type="submit"]') ||
-            document.querySelector('input[type="submit"][name="g"]');
-        if (sub) {
-            try { sub.click(); return true; } catch (e4) {}
+        try {
+            var subEv = new Event('submit', {bubbles:true, cancelable:true});
+            if (form.dispatchEvent(subEv)) {
+                try { if (form.requestSubmit) { form.requestSubmit(); return true; } } catch (e5) {}
+                try { form.submit(); return true; } catch (e6) {}
+            }
+            return true;
+        } catch (e4) {
+            var sub = form.querySelector('input[type="submit"][name="g"]') ||
+                form.querySelector('input[name="g"]') ||
+                form.querySelector('input[type="submit"]') ||
+                form.querySelector('button[type="submit"]') ||
+                document.querySelector('input[type="submit"][name="g"]');
+            if (sub) {
+                try { sub.click(); return true; } catch (e5) {}
+            }
+            try { if (form.requestSubmit) { form.requestSubmit(); return true; } } catch (e5) {}
+            try { form.submit(); return true; } catch (e6) {}
+            alert('提交失败');
+            return false;
         }
-        try { if (form.requestSubmit) { form.requestSubmit(); return true; } } catch (e5) {}
-        try { form.submit(); return true; } catch (e6) {}
-        alert('提交失败');
-        return false;
     }
     function fillReplyBox(text) {
         text = String(text || '');
@@ -971,13 +985,14 @@
         }
     }
     function bindTapNoSlide(el, onTap, tag) {
-        var touch = { x: 0, y: 0, moved: false, active: false };
+        var touch = { x: 0, y: 0, moved: false, active: false, handled: false };
         var MOVE_PX = 10;
         el.addEventListener('touchstart', function(e) {
             var t = e.touches && e.touches[0];
             if (!t) return;
             touch.active = true;
             touch.moved = false;
+            touch.handled = false;
             touch.x = t.clientX;
             touch.y = t.clientY;
         }, { passive: true, capture: true });
@@ -1001,13 +1016,16 @@
                 try { console.log('[YH]', tag || 'tap', 'cancelled: slide'); } catch (e1) {}
                 return;
             }
+            touch.handled = true;
             onTap();
         }, { passive: false, capture: true });
         el.addEventListener('click', function(e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
             if (touch.moved) { touch.moved = false; return; }
+            // 移动端 touchend 已处理，click 不再重复触发
+            if (touch.handled) return;
             onTap();
-        }, true);
+        }, false);
     }
     function makeRepBtn(cls, label, title, bg) {
         var a = document.createElement('a');
@@ -1045,11 +1063,16 @@
             var oldTxt = btn.textContent;
             btn.textContent = '...';
             var live = getReplyText(el) || text;
-            var ok = submitRepeat(live);
-            setTimeout(function() {
+            try {
+                var ok = submitRepeat(live);
+                setTimeout(function() {
+                    locked = false;
+                    btn.textContent = oldTxt;
+                }, ok ? 1500 : 500);
+            } catch (eRep) {
                 locked = false;
                 btn.textContent = oldTxt;
-            }, ok ? 1500 : 500);
+            }
         }, '+1');
     }
     function bindFillReply(cbtn, el, text) {
@@ -1365,7 +1388,7 @@
         if (!S.threadView || !isTopic()) return;
         if (document.querySelector('.yh-loading-all')) return; // 还在加载全部评论
         if (!force && document.querySelector('.yh-thread-tip')) return;
-        if (!force && document.querySelector('.yh-thread-nest')) return;
+        // 允许重复处理，data-yh-threaded 防重复移动
 
         var recontent = document.querySelector('.recontent');
         if (!recontent) return;
@@ -2078,7 +2101,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.192</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.193</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2559,5 +2582,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.192 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.193 by Embrace/19299');
 })();
