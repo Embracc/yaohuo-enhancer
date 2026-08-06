@@ -1,16 +1,14 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.193
+// @version      0.9.194
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
-// @match        *://yaohuo.me/*
-// @match        *://*.yaohuo.me/*
-// @run-at       document-end
+// @match        https://yaohuo.me/*
+// @match        http://yaohuo.me/*
+// @match        https://*.yaohuo.me/*
+// @match        http://*.yaohuo.me/*
 // @grant        none
-// @icon         data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>
-// @downloadURL  https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js
-// @updateURL    https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js
 // ==/UserScript==
 
 (function() {
@@ -152,7 +150,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
     };
-    var YH_VERSION = '0.9.193';
+    var YH_VERSION = '0.9.194';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -518,7 +516,7 @@
         return null;
     }
     function countReplies() {
-        return document.querySelectorAll('.reline.list-reply, .list-reply, div[data-floor]').length;
+        return document.querySelectorAll('[data-reply-id], .reline, .list-reply, div[data-floor]').length;
     }
     function appendReplyEl(el) {
         var floor = el.getAttribute('data-floor');
@@ -554,7 +552,7 @@
             nests[j].remove();
         }
         // 显示所有可能被隐藏的回复，准备重排
-        var replies = document.querySelectorAll('.reline.list-reply, .list-reply, div[data-floor]');
+        var replies = document.querySelectorAll('[data-reply-id], .reline, .list-reply, div[data-floor]');
         for (var k = 0; k < replies.length; k++) {
             if (replies[k].style && replies[k].style.display === 'none') {
                 replies[k].style.display = '';
@@ -688,7 +686,7 @@
                             var html = res.responseText || '';
                             var tmp = document.createElement('div');
                             tmp.innerHTML = html;
-                            var nodes = tmp.querySelectorAll('.list-reply, .reline.list-reply, div[data-floor]');
+                            var nodes = tmp.querySelectorAll('[data-reply-id], .list-reply, .reline, div[data-floor]');
                             for (var i = 0; i < nodes.length; i++) {
                                 var el = document.importNode(nodes[i], true);
                                 if (appendReplyEl(el)) added++;
@@ -752,7 +750,7 @@
                                     }
                                     oldNests[oi].parentNode.removeChild(oldNests[oi]);
                                 }
-                                var replies = document.querySelectorAll('.reline, .list-reply, [data-floor]');
+                                var replies = document.querySelectorAll('[data-reply-id], .reline, .list-reply, [data-floor]');
                                 for (var ri = 0; ri < replies.length; ri++) { replies[ri].removeAttribute('data-yh-threaded'); replies[ri].style.display = ''; }
                             } catch (e1) {}
                             f_threadView(true);
@@ -783,7 +781,7 @@
                                     var html = res.responseText || '';
                                     var tmp = document.createElement('div');
                                     tmp.innerHTML = html;
-                                    var nodes = tmp.querySelectorAll('.list-reply, .reline.list-reply, div[data-floor]');
+                                    var nodes = tmp.querySelectorAll('[data-reply-id], .list-reply, .reline, div[data-floor]');
                                     var added = 0;
                                     for (var ni = 0; ni < nodes.length; ni++) {
                                         var el = document.importNode(nodes[ni], true);
@@ -802,7 +800,7 @@
                                                 }
                                                 oldNests[oi].parentNode.removeChild(oldNests[oi]);
                                             }
-                                            var replies = document.querySelectorAll('.reline, .list-reply, [data-floor]');
+                                            var replies = document.querySelectorAll('[data-reply-id], .reline, .list-reply, [data-floor]');
                                             for (var ri = 0; ri < replies.length; ri++) { replies[ri].removeAttribute('data-yh-threaded'); replies[ri].style.display = ''; }
                                         } catch (e1) {}
                                         f_threadView(true);
@@ -823,17 +821,16 @@
     // 5. 复读机：每条评论后 +1，点击后复读并发送
         function getReplyNodes() {
         var sels = [
-            '.recontent .reline.list-reply',
+            '.recontent [data-reply-id]',
+            '[data-reply-id]',
             '.recontent .list-reply',
             '.recontent .reline',
             '.recontent div[data-floor]',
             '.list-reply',
             '.reline',
-            'div[data-floor]',
-            'div[data-reply-id]'
+            'div[data-floor]'
         ];
         var out = [];
-        // 用 Set 去重，DOM 节点当对象 key 会全转 [object HTMLDivElement] 导致只保留第一个
         var seen = (typeof Set !== 'undefined') ? new Set() : null;
         for (var s = 0; s < sels.length; s++) {
             var nodes = document.querySelectorAll(sels[s]);
@@ -842,16 +839,16 @@
                 if (!el) continue;
                 if (seen) { if (seen.has(el)) continue; seen.add(el); }
                 else { var k = el.getAttribute('data-floor') || el.getAttribute('data-reply-id') || el.className + '_' + el.innerHTML.length; if (out.some(function(o) { return o === el; })) continue; }
-                var hasFloor = el.hasAttribute('data-floor') || !!el.querySelector('.floornumber');
-                var hasText = !!el.querySelector('.retext, .content, .reply-content');
-                var hasNick = !!el.querySelector('.renick');
+                var hasFloor = el.hasAttribute('data-floor') || !!el.querySelector('[class^="floornumber"], .floornumber');
+                var hasText = !!el.querySelector('.retext, .content, .reply-content, [class^="retext"]');
+                var hasNick = !!el.querySelector('.renick, [class^="renick"]');
                 if (!(hasText || (hasFloor && hasNick))) continue;
                 out.push(el);
             }
         }
         return out;
     } function getReplyTextNode(el) {
-        return el.querySelector('.retext') || el.querySelector('.content') || el.querySelector('.reply-content');
+        return el.querySelector('.retext, [class^="retext"], .content, .reply-content');
     }
     function getReplyText(el) {
         var t = getReplyTextNode(el);
@@ -1047,7 +1044,7 @@
             if (retext.nextSibling) retext.parentNode.insertBefore(wrap, retext.nextSibling);
             else retext.parentNode.appendChild(wrap);
         } else {
-            var renick = el.querySelector('.renick');
+            var renick = el.querySelector('.renick, [class^="renick"]');
             if (renick && renick.parentNode) renick.parentNode.appendChild(wrap);
             else el.appendChild(wrap);
         }
@@ -1291,7 +1288,7 @@
                                         var links = doc.querySelectorAll('.renick a[href*="touserid=' + uid + '"]');
                                         var alreadyEaten = false;
                                         for (var si = 0; si < links.length; si++) {
-                                            var replyEl = links[si].closest('.reline, .list-reply, [data-floor]');
+                                            var replyEl = links[si].closest('[data-reply-id], .reline, .list-reply, [data-floor]');
                                             if (!replyEl) continue;
                                             var txt = (replyEl.textContent || '').replace(/\\s+/g, ' ').trim();
                                             if (txt.indexOf('吃') >= 0 || txt.indexOf('肉') >= 0) { alreadyEaten = true; break; }
@@ -1333,7 +1330,7 @@
         var selector = '.renick a[href*="touserid=' + uid + '"], .renick a[href*="userinfo.aspx?touserid=' + uid + '"]';
         var links = document.querySelectorAll(selector);
         for (var i = 0; i < links.length; i++) {
-            var replyEl = links[i].closest('.reline, .list-reply, .reline.list-reply, [data-floor]');
+            var replyEl = links[i].closest('[data-reply-id], .reline, .list-reply, [data-floor]');
             if (!replyEl) continue;
             var text = getReplyText(replyEl);
             if (text && (text.indexOf('吃') >= 0 || text.indexOf('肉') >= 0)) {
@@ -1393,7 +1390,7 @@
         var recontent = document.querySelector('.recontent');
         if (!recontent) return;
 
-        var replyNodes = document.querySelectorAll('.reline.list-reply, .list-reply, div[data-floor]');
+        var replyNodes = document.querySelectorAll('[data-reply-id], .reline, .list-reply, div[data-floor]');
         if (!replyNodes.length) return;
 
         var floorMap = {};
@@ -1407,7 +1404,8 @@
             var el = replyNodes[j];
             if (!el || el.closest('.yh-thread-nest')) continue;
             if (el.getAttribute('data-yh-threaded') === '1') continue;
-            var reother = el.querySelector('.reother a');
+            // 兼容新旧布局：reother 或 [class*="reother"] 下的 a 链接
+            var reother = el.querySelector('.reother a, [class*="reother"] a');
             if (!reother) continue;
             var href = reother.getAttribute('href') || '';
             var m = href.match(/tofloor=(\d+)/);
@@ -1418,7 +1416,7 @@
             var target = floorMap[targetFloor];
             if (!target) continue;
 
-            var nest = target.querySelector(':scope > .yh-thread-nest') || target.querySelector('.yh-thread-nest');
+            var nest = target.querySelector('.yh-thread-nest');
             if (!nest) {
                 nest = document.createElement('div');
                 nest.className = 'yh-thread-nest yh-thread';
@@ -1459,14 +1457,14 @@
         var opNick = (opLink.textContent || '').trim();
         if (!opNick) return;
         var tagColor = S.opColor || '#1abc9c';
-        var all = document.querySelectorAll('.reline, .list-reply, [data-floor]');
+        var all = document.querySelectorAll('[data-reply-id], .reline, .list-reply, [data-floor]');
         for (var i = 0; i < all.length; i++) {
             if (all[i].querySelector('.yh-optag')) continue;
-            var nickEl = all[i].querySelector('.renick a');
+            var nickEl = all[i].querySelector('.renick a, [class^="renick"] a');
             if (!nickEl) continue;
             var nick = (nickEl.textContent || '').trim();
             if (nick === opNick) {
-                var renick = all[i].querySelector('.renick');
+                var renick = all[i].querySelector('.renick, [class^="renick"]');
                 if (!renick) continue;
                 var tag = document.createElement('span');
                 tag.className = 'yh-optag';
@@ -2101,7 +2099,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.193</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.194</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2582,5 +2580,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.193 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.194 by Embrace/19299');
 })();
