@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.190
+// @version      0.9.191
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        *://yaohuo.me/*
@@ -148,7 +148,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
     };
-    var YH_VERSION = '0.9.190';
+    var YH_VERSION = '0.9.191';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1399,7 +1399,7 @@
             if (!nest) {
                 nest = document.createElement('div');
                 nest.className = 'yh-thread-nest yh-thread';
-                nest.style.cssText = 'margin:6px 0 6px 14px;border-left:3px solid #1abc9c;padding:4px 0 4px 10px;background:rgba(26,188,156,.04);border-radius:0 8px 8px 0';
+                nest.style.cssText = 'margin:4px 0 4px 10px;border-left:3px solid #1abc9c;padding:3px 0 3px 8px;background:rgba(26,188,156,.04);border-radius:0 8px 8px 0';
                 target.appendChild(nest);
             }
             // 移动原节点进嵌套（比 clone 更干净，避免重复）
@@ -1409,8 +1409,8 @@
             moved.style.display = '';
             moved.setAttribute('data-yh-threaded', '1');
             // 缩进样式
-            moved.style.margin = '4px 0';
-            moved.style.padding = '4px 6px';
+            moved.style.margin = '3px 0';
+            moved.style.padding = '3px 6px';
             moved.style.background = 'rgba(255,255,255,.7)';
             moved.style.borderRadius = '6px';
             grouped++;
@@ -1421,7 +1421,7 @@
             if (old) old.remove();
             var tip = document.createElement('div');
             tip.className = 'yh-thread-tip yh-thread';
-            tip.style.cssText = 'padding:6px 10px;background:#f0faf6;border-radius:6px;font-size:12px;color:#1abc9c;margin-bottom:6px';
+            tip.style.cssText = 'padding:4px 10px;background:#f0faf6;border-radius:6px;font-size:11px;color:#1abc9c;margin-bottom:4px';
             tip.textContent = '📋 已整理 ' + grouped + ' 条楼中楼回复（全部评论加载后）';
             recontent.parentNode.insertBefore(tip, recontent);
         }
@@ -2078,7 +2078,7 @@
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.190</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.191</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2559,5 +2559,5 @@
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.190 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.191 by Embrace/19299');
 })();
