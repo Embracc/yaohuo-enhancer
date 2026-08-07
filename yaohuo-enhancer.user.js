@@ -1381,72 +1381,102 @@
     }
 
     // 9. 楼中楼整理（需全部评论加载完成后统一执行）
-    function f_threadView(force) {
-        if (!S.threadView || !isTopic()) return;
-        if (document.querySelector('.yh-loading-all')) return; // 还在加载全部评论
-        if (!force && document.querySelector('.yh-thread-tip')) return;
-        // 允许重复处理，data-yh-threaded 防重复移动
+function f_threadView(force) {
+    if (!S.threadView || !isTopic()) return;
+    if (document.querySelector('.yh-loading-all')) return;
+    if (!force && document.querySelector('.yh-thread-tip')) return;
 
-        var recontent = document.querySelector('.recontent');
-        if (!recontent) return;
+    var recontent = document.querySelector('.recontent');
+    if (!recontent) return;
 
-        var replyNodes = document.querySelectorAll('[data-reply-id], .reline, .list-reply, div[data-floor]');
-        if (!replyNodes.length) return;
+    // 获取所有回复节点（增强移动端选择器）
+    var replyNodes = document.querySelectorAll(
+        '[data-reply-id], .reline, .list-reply, div[data-floor], ' +
+        '.reply-item, .reply-box, .comment-item, [class*="reply"], [class*="comment"]'
+    );
+    if (!replyNodes.length) return;
 
-        var floorMap = {};
-        for (var i = 0; i < replyNodes.length; i++) {
-            var f = replyNodes[i].getAttribute('data-floor');
-            if (f && !replyNodes[i].closest('.yh-thread-nest')) floorMap[f] = replyNodes[i];
+    // 建立楼层映射：支持 data-floor 或从 .floornumber 提取
+    var floorMap = {};
+    for (var i = 0; i < replyNodes.length; i++) {
+        var el = replyNodes[i];
+        if (el.closest('.yh-thread-nest')) continue; // 已整理过的跳过
+        var floor = el.getAttribute('data-floor');
+        // 若没有 data-floor，尝试从内部 .floornumber 或 .floor-num 提取
+        if (!floor) {
+            var fn = el.querySelector('.floornumber, .floor-num, .floor-number');
+            if (fn) floor = fn.textContent.trim();
         }
-
-        var grouped = 0;
-        for (var j = 0; j < replyNodes.length; j++) {
-            var el = replyNodes[j];
-            if (!el || el.closest('.yh-thread-nest')) continue;
-            if (el.getAttribute('data-yh-threaded') === '1') continue;
-            // 兼容新旧布局：reother 或 [class*="reother"] 下的 a 链接
-            var reother = el.querySelector('.reother a, [class*="reother"] a');
-            if (!reother) continue;
-            var href = reother.getAttribute('href') || '';
-            var m = href.match(/tofloor=(\d+)/);
-            if (!m) continue;
-            var targetFloor = m[1];
-            var myFloor = el.getAttribute('data-floor');
-            if (myFloor && myFloor === targetFloor) continue;
-            var target = floorMap[targetFloor];
-            if (!target) continue;
-
-            var nest = target.querySelector('.yh-thread-nest');
-            if (!nest) {
-                nest = document.createElement('div');
-                nest.className = 'yh-thread-nest yh-thread';
-                nest.style.cssText = 'margin:2px 0 2px 10px;border-left:3px solid #1abc9c;padding:2px 0 2px 8px;background:rgba(26,188,156,.04);border-radius:0 8px 8px 0';
-                target.appendChild(nest);
-            }
-            // 移动原节点进嵌套（比 clone 更干净，避免重复）
-            var moved = el;
-            // 若已有复读按钮等，保留
-            nest.appendChild(moved);
-            moved.style.display = '';
-            moved.setAttribute('data-yh-threaded', '1');
-            // 缩进样式
-            moved.style.margin = '1px 0';
-            moved.style.padding = '2px 6px';
-            moved.style.background = 'rgba(255,255,255,.7)';
-            moved.style.borderRadius = '6px';
-            grouped++;
-        }
-
-        if (grouped > 0) {
-            var old = document.querySelector('.yh-thread-tip');
-            if (old) old.remove();
-            var tip = document.createElement('div');
-            tip.className = 'yh-thread-tip yh-thread';
-            tip.style.cssText = 'padding:4px 10px;background:#f0faf6;border-radius:6px;font-size:11px;color:#1abc9c;margin-bottom:4px';
-            tip.textContent = '📋 已整理 ' + grouped + ' 条楼中楼回复（全部评论加载后）';
-            recontent.parentNode.insertBefore(tip, recontent);
-        }
+        if (floor) floorMap[floor] = el;
     }
+
+    var grouped = 0;
+    // 遍历所有回复，查找包含 tofloor 的链接
+    for (var j = 0; j < replyNodes.length; j++) {
+        var el = replyNodes[j];
+        if (!el || el.closest('.yh-thread-nest')) continue;
+        if (el.getAttribute('data-yh-threaded') === '1') continue;
+
+        // 查找所有可能的回复引用链接（兼容移动端）
+        var replyLink = el.querySelector('.reother a, [class*="reother"] a, a[href*="tofloor="], a[href*="tofloor="]');
+        if (!replyLink) {
+            // 如果还没有，尝试在所有 a 中找包含 "tofloor" 的
+            var allA = el.querySelectorAll('a');
+            for (var k = 0; k < allA.length; k++) {
+                if (allA[k].href && allA[k].href.indexOf('tofloor=') !== -1) {
+                    replyLink = allA[k];
+                    break;
+                }
+            }
+        }
+        if (!replyLink) continue;
+
+        var href = replyLink.getAttribute('href') || '';
+        var m = href.match(/tofloor=(\d+)/);
+        if (!m) continue;
+        var targetFloor = m[1];
+        var myFloor = el.getAttribute('data-floor');
+        if (!myFloor) {
+            // 尝试从楼层号元素提取
+            var fn2 = el.querySelector('.floornumber, .floor-num, .floor-number');
+            if (fn2) myFloor = fn2.textContent.trim();
+        }
+        if (myFloor && myFloor === targetFloor) continue; // 自回忽略
+
+        var target = floorMap[targetFloor];
+        if (!target) continue;
+
+        // 创建或获取嵌套容器
+        var nest = target.querySelector('.yh-thread-nest');
+        if (!nest) {
+            nest = document.createElement('div');
+            nest.className = 'yh-thread-nest yh-thread';
+            nest.style.cssText = 'margin:2px 0 2px 10px;border-left:3px solid #1abc9c;padding:2px 0 2px 8px;background:rgba(26,188,156,.04);border-radius:0 8px 8px 0';
+            target.appendChild(nest);
+        }
+
+        // 移动原节点进嵌套
+        var moved = el;
+        nest.appendChild(moved);
+        moved.style.display = '';
+        moved.setAttribute('data-yh-threaded', '1');
+        moved.style.margin = '1px 0';
+        moved.style.padding = '2px 6px';
+        moved.style.background = 'rgba(255,255,255,.7)';
+        moved.style.borderRadius = '6px';
+        grouped++;
+    }
+
+    if (grouped > 0) {
+        var old = document.querySelector('.yh-thread-tip');
+        if (old) old.remove();
+        var tip = document.createElement('div');
+        tip.className = 'yh-thread-tip yh-thread';
+        tip.style.cssText = 'padding:4px 10px;background:#f0faf6;border-radius:6px;font-size:11px;color:#1abc9c;margin-bottom:4px';
+        tip.textContent = '📋 已整理 ' + grouped + ' 条楼中楼回复（移动端优化）';
+        recontent.parentNode.insertBefore(tip, recontent);
+    }
+}
 
     // 10. 楼主标识
     function f_opTag() {
@@ -2562,6 +2592,9 @@
     function boot() {
         run();
         setInterval(run, 2000);
+		setInterval(function() {
+    safe(f_threadView);
+}, 3000);
         safe(f_autoUpdate);
     }
     if (document.body) boot();
