@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.210
+// @version      0.9.211
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -215,7 +215,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1,
     };
-    var YH_VERSION = '0.9.210';
+    var YH_VERSION = '0.9.211';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1416,31 +1416,56 @@
         var pid = postId[1];
         var today = new Date().toISOString().slice(0, 10);
         var cacheKey = 'yh_eat_' + pid;
-        // localStorage 仅作为同一天快速跳过缓存，跨天自动失效（重新检查页面）
+        // localStorage 当天缓存
         if (localStorage.getItem(cacheKey) === today) return;
-        // 先查页面上自己有没有已吃的回复
-        var uid = getMyUidSync().uid || '';
-        if (uid && hasEatenOnPage(pid, uid)) {
-            localStorage.setItem(cacheKey, today);
-            return;
-        }
+        // 检查是否是派肉贴（yushuzi 元素存在且余量 > 0）
         var remainEl = document.querySelector('.yushuzi');
         if (!remainEl) return;
         var remain = parseInt(remainEl.textContent.trim());
         if (isNaN(remain) || remain <= 0) return;
+        // 检查页面上自己有没有已吃的回复
+        var uid = getMyUidSync().uid || '';
+        if (uid) {
+            var selector = '.renick a[href*="touserid=' + uid + '"], .renick a[href*="userinfo.aspx?touserid=' + uid + '"]';
+            var links = document.querySelectorAll(selector);
+            var alreadyReplied = false;
+            for (var i = 0; i < links.length; i++) {
+                var replyEl = links[i].closest('[data-reply-id], .reline, .list-reply, [data-floor]');
+                if (replyEl) { alreadyReplied = true; break; }
+            }
+            if (alreadyReplied) {
+                localStorage.setItem(cacheKey, today);
+                return;
+            }
+        }
+        // 生成回复内容
         var words = ['吃', '肉'];
         var word = words[Math.floor(Math.random() * words.length)];
         var num = Math.floor(Math.random() * 10);
         var content = word + num;
+        // 找回复框并填写
         var ta = document.querySelector('textarea.retextarea');
         if (!ta) return;
+        ta.value = '';
         ta.value = content;
-        ta.dispatchEvent(new Event('input', {bubbles:true}));
+        try { ta.focus(); } catch (e0) {}
+        try { ta.dispatchEvent(new Event('input', {bubbles:true})); } catch (e1) {}
+        try { ta.dispatchEvent(new Event('change', {bubbles:true})); } catch (e2) {}
+        // 提交
         var form = ta.closest('form');
         if (!form) return;
-        var sub = form.querySelector('input[type="submit"][name="g"], button[type="submit"]');
-        if (sub) sub.click(); else form.submit();
+        var sub = form.querySelector('input[type="submit"][name="g"]') ||
+            form.querySelector('input[name="g"]') ||
+            form.querySelector('input[type="submit"]') ||
+            form.querySelector('button[type="submit"]') ||
+            document.querySelector('input[type="submit"][name="g"]');
+        if (sub) {
+            try { sub.click(); } catch (e3) { try { form.submit(); } catch (e4) {} }
+        } else {
+            try { form.submit(); } catch (e5) {}
+        }
         localStorage.setItem(cacheKey, today);
+        // 显示标签
         var p = remainEl.parentNode;
         if (p) {
             var tag = document.createElement('span');
@@ -2355,7 +2380,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.210</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.211</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2838,5 +2863,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.210 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.211 by Embrace/19299');
 })();
