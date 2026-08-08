@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.207
+// @version      0.9.209
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -212,10 +212,10 @@
     // 设置
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
-        newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
-        fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
+        newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
+        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1,
     };
-    var YH_VERSION = '0.9.207';
+    var YH_VERSION = '0.9.209';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1870,7 +1870,7 @@ function f_threadView(force) {
                 {l:'斜体', tag:'[i]斜体文字[/i]', off:3},
                 {l:'下划线', tag:'[u]下划线文字[/u]', off:3},
                 {l:'删除线', tag:'[strike]删除线文字[/strike]', off:9},
-                {l:'颜色', tag:'[forecolor=red]颜色文字，默认红[/forecolor]', off:15},
+                {l:'颜色', tag:'[backcolor=red]颜色文字，默认红[/backcolor]', off:15},
                 {l:'字体', tag:'[font=serif]文本[/font]', off:12},
                 {l:'大小', tag:'[size=5]文本[/size]', off:8},
             ]},
@@ -2077,6 +2077,7 @@ function f_threadView(force) {
         (document.head || document.documentElement).appendChild(st);
     }
     function f_blacklist() {
+        if (!S.blacklist) return;
         if (!isTopic()) return;
         injectBlkCss();
         var louzhu = document.querySelector('.louzhuxinxi');
@@ -2126,6 +2127,7 @@ function f_threadView(force) {
     }
     // 列表页：过滤黑名单用户的帖子
     function f_blacklistFilter() {
+        if (!S.blacklist) return;
         if (!isList()) return;
         var bl = getBlacklist();
         var names = []; for (var k in bl) { if (bl.hasOwnProperty(k)) names.push(bl[k]); }
@@ -2337,6 +2339,7 @@ function f_threadView(force) {
                 {k:'btnOpacity', l:'⚙ 设置按钮不透明度', g:'界面', sub:1, range:1},
                 {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1},
                 {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1},
+                {k:'blacklist', l:'⛔ 黑名单', g:'界面'},
                 // 评论
                 {k:'loadAll', l:'📥 加载全部评论', g:'评论'},
                 {k:'threadView', l:'📋 楼中楼整理', g:'评论'},
@@ -2354,7 +2357,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.207</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.209</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2837,5 +2840,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.207 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.209 by Embrace/19299');
 })();
