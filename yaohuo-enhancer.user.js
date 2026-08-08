@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.203
+// @version      0.9.204
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -150,7 +150,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, rainbowReply: 0,
     };
-    var YH_VERSION = '0.9.203';
+    var YH_VERSION = '0.9.204';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -218,6 +218,7 @@
             group.append(lb);
         }
         $('body').append(group);
+        ensureBlacklistBtn();
     }
 
     // 等级查询 —— 只查当前登录用户，绝不查楼主
@@ -2047,7 +2048,152 @@ function f_threadView(force) {
             }, true);
         }
 
-    var _settingsOpen = false;
+    // 13. 黑名单：拉黑用户，列表页隐藏其帖子
+    var BLACKLIST_KEY = 'yh_blacklist';
+    function getBlacklist() {
+        try { return JSON.parse(localStorage.getItem(BLACKLIST_KEY)) || {}; } catch(e) { return {}; }
+    }
+    function saveBlacklist(bl) {
+        try { localStorage.setItem(BLACKLIST_KEY, JSON.stringify(bl)); } catch(e) {}
+    }
+    // 帖子页：楼主信息处添加拉黑按钮
+    function f_blacklist() {
+        if (!isTopic()) return;
+        var louzhu = document.querySelector('.louzhuxinxi');
+        if (!louzhu) return;
+        if (louzhu.querySelector('.yh-blk-btn')) return;
+        var link = louzhu.querySelector('.louzhunicheng a');
+        if (!link) return;
+        var href = link.getAttribute('href') || '';
+        var m = href.match(/touserid=(\d+)/);
+        if (!m) return;
+        var uid = m[1];
+        var name = (link.textContent || '').trim();
+        var bl = getBlacklist();
+        var isBlacked = !!bl[uid];
+        var btn = document.createElement('a');
+        btn.className = 'yh-blk-btn';
+        btn.href = 'javascript:;';
+        btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;' + (isBlacked ? 'background:#e74c3c;color:#fff!important;' : 'background:#ddd;color:#666!important;');
+        btn.textContent = isBlacked ? '已拉黑' : '拉黑';
+        btn.title = isBlacked ? '点击解除拉黑' : '拉黑此用户，列表页隐藏其帖子';
+        btn.onclick = function(e) {
+            e.preventDefault();
+            var bl2 = getBlacklist();
+            if (bl2[uid]) {
+                delete bl2[uid];
+                btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;background:#ddd;color:#666!important;';
+                btn.textContent = '拉黑';
+                btn.title = '拉黑此用户，列表页隐藏其帖子';
+            } else {
+                bl2[uid] = name;
+                btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;background:#e74c3c;color:#fff!important;';
+                btn.textContent = '已拉黑';
+                btn.title = '点击解除拉黑';
+            }
+            saveBlacklist(bl2);
+        };
+        // 插入到 [操作] 后面
+        var opText = null;
+        var nodes = louzhu.childNodes;
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].nodeType === 3 && nodes[i].textContent.indexOf('操作') >= 0) { opText = nodes[i]; break; }
+        }
+        if (opText && opText.parentNode) {
+            opText.parentNode.insertBefore(btn, opText.nextSibling);
+        } else {
+            louzhu.appendChild(btn);
+        }
+    }
+    // 列表页：过滤黑名单用户的帖子
+    function f_blacklistFilter() {
+        if (!isList()) return;
+        var bl = getBlacklist();
+        var names = Object.values(bl);
+        if (!names.length) return;
+        var items = document.querySelectorAll('.listdata');
+        for (var i = 0; i < items.length; i++) {
+            var nameEl = items[i].querySelector('.louzhunicheng');
+            if (!nameEl) continue;
+            var author = (nameEl.textContent || '').trim();
+            if (names.indexOf(author) !== -1) {
+                items[i].style.display = 'none';
+            }
+        }
+    }
+    // 黑名单管理弹窗
+    var _blkPanelOpen = false;
+    function toggleBlacklistPanel() {
+        if (_blkPanelOpen) {
+            var old = document.querySelector('.yh-blk-panel');
+            if (old) old.remove();
+            _blkPanelOpen = false;
+            return;
+        }
+        var bl = getBlacklist();
+        var uids = Object.keys(bl);
+        var wrap = document.createElement('div');
+        wrap.className = 'yh-blk-panel';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
+        var panel = document.createElement('div');
+        panel.style.cssText = 'width:320px;max-height:70vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 4px 30px rgba(0,0,0,.25);';
+        var html = '<div style="padding:14px 16px;background:#e74c3c;color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0"><span>⛔ 黑名单 <span style="font-weight:normal;font-size:12px;opacity:.8">(' + uids.length + '人)</span></span><span class="yh-blk-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px">&times;</span></div>';
+        if (uids.length === 0) {
+            html += '<div style="padding:30px 16px;text-align:center;color:#999;font-size:13px">暂无拉黑用户</div>';
+        } else {
+            html += '<div style="padding:8px 12px">';
+            for (var i2 = 0; i2 < uids.length; i2++) {
+                var uid = uids[i2];
+                var name = bl[uid] || uid;
+                html += '<div class="yh-blk-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #f0f0f0;font-size:13px">' +
+                    '<span>' + name + ' <span style="color:#999;font-size:11px">(UID:' + uid + ')</span></span>' +
+                    '<a href="javascript:;" class="yh-blk-unban" data-uid="' + uid + '" style="color:#e74c3c;text-decoration:none;font-size:12px;padding:2px 8px;border:1px solid #e74c3c;border-radius:4px">解除</a>' +
+                    '</div>';
+            }
+            html += '</div>';
+        }
+        panel.innerHTML = html;
+        wrap.appendChild(panel);
+        document.body.appendChild(wrap);
+        _blkPanelOpen = true;
+        // 关闭
+        var closeBtn = panel.querySelector('.yh-blk-close');
+        if (closeBtn) closeBtn.onclick = function() { wrap.remove(); _blkPanelOpen = false; };
+        wrap.onclick = function(e) { if (e.target === wrap) { wrap.remove(); _blkPanelOpen = false; } };
+        // 解除按钮
+        var unbans = panel.querySelectorAll('.yh-blk-unban');
+        for (var j = 0; j < unbans.length; j++) {
+            (function(el) {
+                el.onclick = function(e) {
+                    e.preventDefault();
+                    var uid2 = el.getAttribute('data-uid');
+                    var bl2 = getBlacklist();
+                    delete bl2[uid2];
+                    saveBlacklist(bl2);
+                    var item = el.closest('.yh-blk-item');
+                    if (item) item.style.display = 'none';
+                    // 刷新计数
+                    var countEl = panel.querySelector('.yh-blk-count');
+                    if (countEl) countEl.textContent = '(' + Object.keys(bl2).length + '人)';
+                };
+            })(unbans[j]);
+        }
+    }
+    // 在浮动按钮组中增加黑名单按钮（由 f_topBtn 调用）
+    function ensureBlacklistBtn() {
+        var group = document.querySelector('.yh-btn-group');
+        if (!group) return;
+        if (group.querySelector('.yh-blk-btn-fab')) return;
+        var bb = document.createElement('button');
+        bb.className = 'yh-blk-btn-fab';
+        bb.style.cssText = 'width:40px;height:40px;border:1px solid #e74c3c;border-radius:50%;background:#fff;color:#e74c3c;cursor:pointer;font-size:16px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation';
+        bb.textContent = '黑';
+        bb.title = '黑名单管理';
+        bb.onclick = function() { toggleBlacklistPanel(); };
+        // 插入到最前
+        if (group.firstChild) group.insertBefore(bb, group.firstChild);
+        else group.appendChild(bb);
+    }
     function closeSettingsPanel() {
         try {
             var ov = document.querySelector('.yh-settings-overlay');
@@ -2188,7 +2334,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.203</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.204</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2645,6 +2791,8 @@ function f_threadView(force) {
         safe(f_timeDisplay);
         safe(f_imgZoom);
         safe(f_rainbowReply);
+        safe(f_blacklist);
+        safe(f_blacklistFilter);
     }
 
     // 初始化
@@ -2670,5 +2818,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.203 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.204 by Embrace/19299');
 })();
