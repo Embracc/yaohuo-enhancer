@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.206
+// @version      0.9.207
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -215,7 +215,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0,
     };
-    var YH_VERSION = '0.9.206';
+    var YH_VERSION = '0.9.207';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2068,8 +2068,17 @@ function f_threadView(force) {
         try { localStorage.setItem(BLACKLIST_KEY, JSON.stringify(bl)); } catch(e) {}
     }
     // 帖子页：楼主信息处添加拉黑按钮
+    var _blkUiInjected = false;
+    function injectBlkCss() {
+        if (_blkUiInjected) return;
+        _blkUiInjected = true;
+        var st = document.createElement('style');
+        st.textContent = '.yh-blk-btn{display:inline-flex;align-items:center;gap:2px;font-size:11px;padding:1px 8px;margin-left:6px;border-radius:999px;cursor:pointer;text-decoration:none!important;line-height:1.6;font-weight:500;transition:all .2s;vertical-align:middle;border:1px solid #d0d0d0;background:#fff;color:#888!important}.yh-blk-btn:hover{border-color:#e74c3c;color:#e74c3c!important;background:#fdf0ef}.yh-blk-btn.on{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff!important;border-color:#e74c3c;box-shadow:0 1px 4px rgba(231,76,60,.3)}.yh-blk-btn.on:hover{background:linear-gradient(135deg,#e74c3c,#c0392b)}.yh-blk-fab{width:40px;height:40px;border:none;border-radius:50%;cursor:pointer;font-size:15px;font-weight:bold;color:#fff!important;background:linear-gradient(135deg,#ff6b6b,#e74c3c);box-shadow:0 2px 10px rgba(231,76,60,.4);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .15s,box-shadow .2s}.yh-blk-fab:hover{transform:scale(1.08);box-shadow:0 4px 16px rgba(231,76,60,.5)}.yh-blk-fab:active{transform:scale(.95)}.yh-blk-panel .yh-blk-head{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;border-radius:16px 16px 0 0}.yh-blk-item{transition:background .15s}.yh-blk-item:hover{background:#fafafa}.yh-blk-unban{color:#e74c3c;text-decoration:none;font-size:12px;padding:3px 12px;border:1px solid #ffcccc;border-radius:999px;transition:all .2s;background:#fff}.yh-blk-unban:hover{background:#e74c3c;color:#fff!important;border-color:#e74c3c}';
+        (document.head || document.documentElement).appendChild(st);
+    }
     function f_blacklist() {
         if (!isTopic()) return;
+        injectBlkCss();
         var louzhu = document.querySelector('.louzhuxinxi');
         if (!louzhu) return;
         if (louzhu.querySelector('.yh-blk-btn')) return;
@@ -2083,23 +2092,22 @@ function f_threadView(force) {
         var bl = getBlacklist();
         var isBlacked = !!bl[uid];
         var btn = document.createElement('a');
-        btn.className = 'yh-blk-btn';
+        btn.className = 'yh-blk-btn' + (isBlacked ? ' on' : '');
         btn.href = 'javascript:;';
-        btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;' + (isBlacked ? 'background:#e74c3c;color:#fff!important;' : 'background:#ddd;color:#666!important;');
-        btn.textContent = isBlacked ? '已拉黑' : '拉黑';
+        btn.innerHTML = isBlacked ? '⛔ 已拉黑' : '⛔ 拉黑';
         btn.title = isBlacked ? '点击解除拉黑' : '拉黑此用户，列表页隐藏其帖子';
         btn.onclick = function(e) {
             e.preventDefault();
             var bl2 = getBlacklist();
             if (bl2[uid]) {
                 delete bl2[uid];
-                btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;background:#ddd;color:#666!important;';
-                btn.textContent = '拉黑';
+                btn.className = 'yh-blk-btn';
+                btn.innerHTML = '⛔ 拉黑';
                 btn.title = '拉黑此用户，列表页隐藏其帖子';
             } else {
                 bl2[uid] = name;
-                btn.style.cssText = 'display:inline-block;font-size:11px;padding:0 5px;margin-left:4px;border-radius:3px;cursor:pointer;text-decoration:none!important;background:#e74c3c;color:#fff!important;';
-                btn.textContent = '已拉黑';
+                btn.className = 'yh-blk-btn on';
+                btn.innerHTML = '⛔ 已拉黑';
                 btn.title = '点击解除拉黑';
             }
             saveBlacklist(bl2);
@@ -2141,24 +2149,25 @@ function f_threadView(force) {
             _blkPanelOpen = false;
             return;
         }
+        injectBlkCss();
         var bl = getBlacklist();
         var uids = Object.keys(bl);
         var wrap = document.createElement('div');
         wrap.className = 'yh-blk-panel';
         wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
         var panel = document.createElement('div');
-        panel.style.cssText = 'width:320px;max-height:70vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 4px 30px rgba(0,0,0,.25);';
-        var html = '<div style="padding:14px 16px;background:#e74c3c;color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0"><span>⛔ 黑名单 <span style="font-weight:normal;font-size:12px;opacity:.8">(' + uids.length + '人)</span></span><span class="yh-blk-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px">&times;</span></div>';
+        panel.style.cssText = 'width:340px;max-height:70vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.25);';
+        var html = '<div class="yh-blk-head" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1"><span style="font-size:15px;font-weight:bold">⛔ 黑名单 <span style="font-weight:normal;font-size:12px;opacity:.85">(' + uids.length + '人)</span></span><span class="yh-blk-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div>';
         if (uids.length === 0) {
-            html += '<div style="padding:30px 16px;text-align:center;color:#999;font-size:13px">暂无拉黑用户</div>';
+            html += '<div style="padding:40px 16px;text-align:center;color:#bbb;font-size:14px">暂无拉黑用户</div>';
         } else {
-            html += '<div style="padding:8px 12px">';
+            html += '<div style="padding:6px 14px">';
             for (var i2 = 0; i2 < uids.length; i2++) {
                 var uid = uids[i2];
                 var name = bl[uid] || uid;
-                html += '<div class="yh-blk-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #f0f0f0;font-size:13px">' +
-                    '<span>' + name + ' <span style="color:#999;font-size:11px">(UID:' + uid + ')</span></span>' +
-                    '<a href="javascript:;" class="yh-blk-unban" data-uid="' + uid + '" style="color:#e74c3c;text-decoration:none;font-size:12px;padding:2px 8px;border:1px solid #e74c3c;border-radius:4px">解除</a>' +
+                html += '<div class="yh-blk-item" style="display:flex;align-items:center;justify-content:space-between;padding:10px 6px;border-bottom:1px solid #f2f2f2;font-size:13px">' +
+                    '<span style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0">' + (i2 + 1) + '</span><span>' + name + ' <span style="color:#999;font-size:11px">(UID:' + uid + ')</span></span></span>' +
+                    '<a href="javascript:;" class="yh-blk-unban" data-uid="' + uid + '">解除</a>' +
                     '</div>';
             }
             html += '</div>';
@@ -2184,8 +2193,8 @@ function f_threadView(force) {
                     var item = el.closest('.yh-blk-item');
                     if (item) item.style.display = 'none';
                     // 刷新计数
-                    var countEl = panel.querySelector('.yh-blk-count');
-                    if (countEl) countEl.textContent = '(' + Object.keys(bl2).length + '人)';
+                    var countEl = panel.querySelector('.yh-blk-head span');
+                    if (countEl) countEl.textContent = '⛔ 黑名单 (' + Object.keys(bl2).length + '人)';
                 };
             })(unbans[j]);
         }
@@ -2194,12 +2203,12 @@ function f_threadView(force) {
     function ensureBlacklistBtn() {
         var group = document.querySelector('.yh-btn-group');
         if (!group) return;
-        if (group.querySelector('.yh-blk-btn-fab')) return;
+        if (group.querySelector('.yh-blk-btn-fab') || group.querySelector('.yh-blk-fab')) return;
+        injectBlkCss();
         var bb = document.createElement('button');
-        bb.className = 'yh-blk-btn-fab';
-        bb.style.cssText = 'width:40px;height:40px;border:1px solid #e74c3c;border-radius:50%;background:#fff;color:#e74c3c;cursor:pointer;font-size:16px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation';
+        bb.className = 'yh-blk-fab';
         bb.textContent = '黑';
-        bb.title = '黑名单管理';
+        bb.title = '黑名单管理(' + Object.keys(getBlacklist()).length + '人)';
         bb.onclick = function() { toggleBlacklistPanel(); };
         // 插入到最前
         if (group.firstChild) group.insertBefore(bb, group.firstChild);
@@ -2345,7 +2354,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.206</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.207</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2828,5 +2837,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.206 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.207 by Embrace/19299');
 })();
