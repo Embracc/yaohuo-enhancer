@@ -3,7 +3,7 @@
 面向 [妖火网](https://www.yaohuo.me) 的油猴 / VIA 用户脚本：列表浏览、分屏预览、评论增强、发帖 UBB/图床、等级查询、自动更新检测等。  
 **无 `@grant` / 无 `@require`**，自带迷你 jQuery，兼容 VIA 等轻量环境。作者：**Embrace（ID:19299）**。
 
-当前版本：**v0.9.191**
+当前版本：**v0.9.203**
 
 ---
 
@@ -54,7 +54,23 @@ https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo
 
 按里程碑整理；细碎样式/选择器/日志类修补已合并进对应大版本，不再逐条罗列。
 
-### v0.9.191 — 压缩楼中楼绿线区域，移动端更紧凑
+### v0.9.196 ~ v0.9.203 — 炫彩评论、回到底部按钮、提交修复
+
+- 🌈 新增**炫彩评论**：设置-评论开启后，手动回复/复读机+1的评论自动给每个字符加 `[backcolor]` UBB 彩虹渐变（蓝→紫→粉）
+  - 确认 yaohuo 支持 `[backcolor=#RRGGBB]` 渲染为 background-color（`[bgcolor]`/`[color]` 无效会原样显示）
+  - 支持手动快速回复 + 复读机 +1 两种提交路径
+- ⬇️ 新增**回到底部**按钮（浮动按钮组 ↑/↓/Lv）
+- 🐛 修复+1报"帖子ID参数为非数字"：改回 `sub.click()` 触发按钮，让 QuickReplyAjax 走 AJAX 正确传参
+- 🐛 修复手动快速回复不炫彩：QuickReplyAjax 用按钮 onclick 拦截，补充按钮 click 捕获阶段监听
+
+### v0.9.193 ~ v0.9.195 — 修复楼中楼/复读机/苹果兼容性
+
+- 🐛 楼中楼不显示：选择器兼容站方新布局（`[data-reply-id]` 优先，兼容 `.reply-item` 等移动端类名）
+- 🐛 复读机只能用一次：修复 locked 锁未释放 + 触摸事件双重触发
+- 📱 苹果手机不加载：`@match` 改显式 http/https，`@grant none`，移除 `@run-at document-end`
+- 🔀 合并 PR #1（wrisin）：移动端选择器增强 + 楼层号/tofloor 兜底
+
+### v0.9.192 — 压缩楼中楼绿线区域，移动端更紧凑
 
 - 📏 nest 容器: margin 6→4, padding 4→3, margin-left 14→10
 - 📏 回复项: margin 4→3, padding 4→3
