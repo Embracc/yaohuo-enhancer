@@ -1,18 +1,83 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.204
+// @version      0.9.205
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
 // @match        http://yaohuo.me/*
 // @match        https://*.yaohuo.me/*
 // @match        http://*.yaohuo.me/*
+// @run-at       document-end
 // @grant        none
 // ==/UserScript==
 
+
 (function() {
     'use strict';
+
+    // ===== VIA / 旧版 WebView 兼容：ES5-polyfill =====
+    (function() {
+        // Array.from polyfill（部分 VIA/旧 WebView 不支持）
+        if (!Array.from) {
+            Array.from = function(arr) {
+                return [].slice.call(arr);
+            };
+        }
+        // Object.values polyfill
+        if (!Object.values) {
+            Object.values = function(obj) {
+                var out = [];
+                for (var k in obj) { if (obj.hasOwnProperty(k)) out.push(obj[k]); }
+                return out;
+            };
+        }
+        // Object.assign polyfill
+        if (!Object.assign) {
+            Object.assign = function(target) {
+                for (var i = 1; i < arguments.length; i++) {
+                    var src = arguments[i];
+                    for (var k in src) { if (src.hasOwnProperty(k)) target[k] = src[k]; }
+                }
+                return target;
+            };
+        }
+        // String.includes polyfill
+        if (!String.prototype.includes) {
+            String.prototype.includes = function(search, start) {
+                return this.indexOf(search, start) !== -1;
+            };
+        }
+        // Array.includes polyfill
+        if (!Array.prototype.includes) {
+            Array.prototype.includes = function(search, start) {
+                start = start || 0;
+                for (var i = start; i < this.length; i++) {
+                    if (this[i] === search) return true;
+                }
+                return false;
+            };
+        }
+        // Element.closest polyfill（老 WebView）
+        if (!Element.prototype.closest) {
+            Element.prototype.closest = function(sel) {
+                var el = this;
+                while (el && el.nodeType === 1) {
+                    if (el.matches(sel)) return el;
+                    el = el.parentNode;
+                }
+                return null;
+            };
+        }
+        // Element.matches polyfill
+        if (!Element.prototype.matches) {
+            Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector || function(sel) {
+                var nodeList = document.querySelectorAll(sel);
+                for (var i = 0; i < nodeList.length; i++) { if (nodeList[i] === this) return true; }
+                return false;
+            };
+        }
+    })();
 
     // 迷你 jQuery（纯原生 JS，无 GM_* 依赖）
     var $ = function(sel, ctx) {
@@ -22,10 +87,10 @@
             if (sel.trim().charAt(0) === '<') {
                 var d = document.createElement('div');
                 d.innerHTML = sel;
-                return wrap(d.children.length === 1 ? d.children[0] : Array.from(d.children));
+                return wrap(d.children.length === 1 ? d.children[0] : [].slice.call(d.children));
             }
             var el = (ctx || document).querySelectorAll(sel);
-            return wrap(el.length === 1 ? el[0] : Array.from(el));
+            return wrap(el.length === 1 ? el[0] : [].slice.call(el));
         }
         return wrap(sel);
     };
@@ -150,7 +215,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 0, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 0, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 1, showTime: 0, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, rainbowReply: 0,
     };
-    var YH_VERSION = '0.9.204';
+    var YH_VERSION = '0.9.205';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -549,7 +614,7 @@
         for (var j = 0; j < nests.length; j++) {
             if (!nests[j].parentNode) continue;
             // 先把嵌套内的回复移回 recontent，再删除空巢，避免丢失回复
-            var children = Array.from(nests[j].children);
+            var children = [].slice.call(nests[j].children);
             for (var c = 0; c < children.length; c++) {
                 if (recontent) recontent.appendChild(children[c]);
                 else if (nests[j].parentNode) nests[j].parentNode.insertBefore(children[c], nests[j]);
@@ -748,7 +813,7 @@
                                 var oldNests = document.querySelectorAll('.yh-thread-nest, .yh-thread-tip');
                                 for (var oi = 0; oi < oldNests.length; oi++) {
                                     if (!oldNests[oi].parentNode) continue;
-                                    var children = Array.from(oldNests[oi].children);
+                                    var children = [].slice.call(oldNests[oi].children);
                                     for (var c = 0; c < children.length; c++) {
                                         if (recontent) recontent.appendChild(children[c]);
                                         else if (oldNests[oi].parentNode) oldNests[oi].parentNode.insertBefore(children[c], oldNests[oi]);
@@ -798,7 +863,7 @@
                                             var oldNests = document.querySelectorAll('.yh-thread-nest, .yh-thread-tip');
                                             for (var oi = 0; oi < oldNests.length; oi++) {
                                                 if (!oldNests[oi].parentNode) continue;
-                                                var children = Array.from(oldNests[oi].children);
+                                                var children = [].slice.call(oldNests[oi].children);
                                                 for (var c = 0; c < children.length; c++) {
                                                     if (recontent) recontent.appendChild(children[c]);
                                                     else if (oldNests[oi].parentNode) oldNests[oi].parentNode.insertBefore(children[c], oldNests[oi]);
@@ -2109,7 +2174,7 @@ function f_threadView(force) {
     function f_blacklistFilter() {
         if (!isList()) return;
         var bl = getBlacklist();
-        var names = Object.values(bl);
+        var names = []; for (var k in bl) { if (bl.hasOwnProperty(k)) names.push(bl[k]); }
         if (!names.length) return;
         var items = document.querySelectorAll('.listdata');
         for (var i = 0; i < items.length; i++) {
@@ -2334,7 +2399,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.204</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.205</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2818,5 +2883,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.204 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.205 by Embrace/19299');
 })();
