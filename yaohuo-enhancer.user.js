@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.212
+// @version      0.9.213
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -215,7 +215,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1,
     };
-    var YH_VERSION = '0.9.212';
+    var YH_VERSION = '0.9.213';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2213,12 +2213,23 @@ function f_threadView(force) {
     function ensureBlacklistBtn() {
         var group = document.querySelector('.yh-btn-group');
         if (!group) return;
-        if (group.querySelector('.yh-blk-btn-fab') || group.querySelector('.yh-blk-fab')) return;
+        var blkCount = Object.keys(getBlacklist()).length;
+        var exists = group.querySelector('.yh-blk-fab');
+        // 黑名单为空时移除按钮
+        if (blkCount === 0) {
+            if (exists) exists.remove();
+            return;
+        }
+        // 黑名单非空时确保按钮存在
+        if (exists) {
+            exists.title = '黑名单管理(' + blkCount + '人)';
+            return;
+        }
         injectBlkCss();
         var bb = document.createElement('button');
         bb.className = 'yh-blk-fab';
         bb.textContent = '黑';
-        bb.title = '黑名单管理(' + Object.keys(getBlacklist()).length + '人)';
+        bb.title = '黑名单管理(' + blkCount + '人)';
         bb.onclick = function() { toggleBlacklistPanel(); };
         // 插入到最前
         if (group.firstChild) group.insertBefore(bb, group.firstChild);
@@ -2365,7 +2376,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.212</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.213</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2823,6 +2834,7 @@ function f_threadView(force) {
         safe(f_imgZoom);
         safe(f_blacklist);
         safe(f_blacklistFilter);
+        safe(ensureBlacklistBtn);
     }
 
     // 初始化
@@ -2848,5 +2860,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.212 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.213 by Embrace/19299');
 })();
