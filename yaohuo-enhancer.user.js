@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.214
+// @version      0.9.215
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -215,7 +215,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1,
     };
-    var YH_VERSION = '0.9.214';
+    var YH_VERSION = '0.9.215';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -309,6 +309,12 @@
         // 我的地盘页常见：nickname-row 里的 userinfo
         m = html.match(/nickname-row[\s\S]{0,200}?userinfo\.aspx\?touserid=(\d+)/);
         if (m) return m[1];
+        // 我的地盘「明细」链接 banklist.aspx?key=自己的UID（妖晶明细，最可靠自我标识）
+        m = html.match(/banklist\.aspx\?key=(\d+)/);
+        if (m) return m[1];
+        // 我的帖子/遇到一览：key=UID（不限 type=pub 顺序）
+        m = html.match(/book_list_search\.aspx[^"']*?key=(\d+)/);
+        if (m) return m[1];
         m = html.match(/href="\/myfile\.aspx"[^>]*>[\s\S]{0,120}?userinfo\.aspx\?touserid=(\d+)/);
         if (m) return m[1];
         // 发帖搜索 key=uid
@@ -374,7 +380,7 @@
             return;
         }
         var tried = 0;
-        var urls = ['/', '/myfile.aspx'];
+        var urls = ['/myfile.aspx', '/'];
         var done = false;
         function finish(uid, src) {
             if (done) return;
@@ -462,12 +468,14 @@
                     var html2 = res2.responseText || '';
                     var st = res2.status || 0;
                     if ((!html2 && st !== 0) || st >= 400 || !hasLevelHtml(html2)) {
+                        // uid 无效/未注册说明身份解析有误：清掉脏缓存，避免下次仍取错
+                        if (html2 && html2.indexOf('\u672a\u6ce8\u518c') >= 0) clearMyUidCache();
                         _lvBusy = false;
                         resetLvBtn(btn);
                         var tip = '等级信息请求失败(' + st + ') uid=' + uid;
                         try { tip += '\nlen=' + (html2 ? html2.length : 0); } catch (e1) {}
                         tip += '\n请确认已登录妖火后再试';
-                        showInfo(tip, '👤 角色信息');
+                        showInfo(tip, '❤️ 角色信息');
                         return;
                     }
                     var nick = parseField(html2, '\u6635\u79f0');
@@ -2376,7 +2384,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.214</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.215</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2860,5 +2868,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.214 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.215 by Embrace/19299');
 })();
