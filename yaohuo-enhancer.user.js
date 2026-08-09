@@ -217,7 +217,7 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
-        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 0,
+        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
     var YH_VERSION = '0.9.218';
     // 官方 raw（国外/开代理）
