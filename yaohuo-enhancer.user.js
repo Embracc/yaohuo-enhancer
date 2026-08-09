@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.217
+// @version      0.9.218
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -217,9 +217,9 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
-        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1,
+        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 0,
     };
-    var YH_VERSION = '0.9.217';
+    var YH_VERSION = '0.9.218';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2477,6 +2477,7 @@ function f_threadView(force) {
                 {k:'splitView', l:'📺 分屏预览', g:'浏览', refresh:1},
                 {k:'floatPreview', l:'🪟 浮窗预览', g:'浏览', refresh:1},
                 {k:'showTime', l:'🕐 列表时间显示', g:'浏览', sub:1},
+                {k:'pullRefresh', l:'⬇️ 下拉刷新', g:'浏览'},
                 // 分屏（仅分屏开启时显示）
                 {k:'splitRatio', l:'📐 左侧占比%', g:'分屏', range:1, min:20, max:60, step:1, dep:'splitView'},
                 {k:'splitPadding', l:'📏 左侧边距(px)', g:'分屏', range:1, min:0, max:50, step:1, dep:'splitView'},
@@ -2508,7 +2509,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.217</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.218</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2985,6 +2986,110 @@ function f_threadView(force) {
         safe(f_blacklistFilter);
         safe(f_kwFilter);
         safe(ensureBlacklistBtn);
+        if (!inIframe) safe(f_pullRefresh);
+    }
+
+    // 下拉刷新（VIA 无此功能）：页面顶部下拉超过阈值松开即刷新
+    var _pullBound = false;
+    function f_pullRefresh() {
+        if (!S.pullRefresh) return;
+        if (_pullBound) return;
+        _pullBound = true;
+
+        var THRESHOLD = 70;          // 触发刷新需要下拉的像素
+        var MAX_PULL = 120;          // 下拉距离上限（视觉）
+        var state = { active: false, startY: 0, cur: 0, pulling: false };
+        var indicator = null;
+
+        function ensureIndicator() {
+            if (indicator && indicator.parentNode) return indicator;
+            indicator = document.createElement('div');
+            indicator.style.cssText = 'position:fixed;top:0;left:0;right:0;height:0;overflow:hidden;z-index:2147483645;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;box-sizing:border-box;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,.9));color:#666;font-size:13px;font-weight:bold;transition:height .12s ease-out;pointer-events:none;-webkit-user-select:none;user-select:none;';
+            indicator.innerHTML = '<svg id="yh-pull-arrow" width="22" height="22" viewBox="0 0 24 24" style="transform:rotate(0deg);transition:transform .2s"><path d="M12 4v12m0 0l-5-5m5 5l5-5" stroke="#1abc9c" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="yh-pull-text" style="margin-top:4px">下拉刷新</span>';
+            document.body.appendChild(indicator);
+            return indicator;
+        }
+        function setPull(rawPx) {
+            var ind = ensureIndicator();
+            // 阻尼：越往下越难拉（视觉高度）
+            var damped = Math.round(rawPx * (1 / (1 + rawPx / 160)));
+            var h = Math.min(damped, MAX_PULL);
+            ind.style.height = h + 'px';
+            var arrow = ind.querySelector('#yh-pull-arrow');
+            var txt = ind.querySelector('#yh-pull-text');
+            if (rawPx >= THRESHOLD) {
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+                if (txt) txt.textContent = '释放刷新';
+            } else {
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+                if (txt) txt.textContent = '下拉刷新';
+            }
+        }
+        function resetPull() {
+            var ind = ensureIndicator();
+            ind.style.transition = 'height .2s ease-out';
+            ind.style.height = '0px';
+            setTimeout(function() { if (ind) ind.style.transition = 'height .12s ease-out'; }, 220);
+        }
+
+        document.addEventListener('touchstart', function(e) {
+            if (!S.pullRefresh) return;
+            // 多指 / 非单指滑动不触发
+            if (e.touches.length !== 1) return;
+            // 页面必须已在顶部才允许下拉
+            var st = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            if (st > 4) return;
+            // 排除在输入框/文本域/可滚动小部件内下拉
+            var t = e.target;
+            var tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+            if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+            var touch = e.touches[0];
+            state.active = true;
+            state.startY = touch.clientY;
+            state.cur = 0;
+            state.pulling = false;
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!state.active || !S.pullRefresh) return;
+            var touch = e.touches && e.touches[0];
+            if (!touch) return;
+            var dy = touch.clientY - state.startY;
+            if (dy < 0) { // 上滑，取消
+                state.active = false;
+                if (state.pulling) resetPull();
+                state.pulling = false;
+                return;
+            }
+            state.pulling = true;
+            state.cur = Math.max(0, dy);
+            setPull(state.cur);
+            // 阻止页面默认滚动（顶部下拉橡皮筋）
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false, capture: true });
+
+        document.addEventListener('touchend', function(e) {
+            if (!state.active || !S.pullRefresh) return;
+            var willRefresh = state.pulling && state.cur >= THRESHOLD;
+            state.active = false;
+            state.pulling = false;
+            if (willRefresh) {
+                var ind = ensureIndicator();
+                if (ind) {
+                    ind.style.transition = 'height .15s';
+                    ind.style.height = '44px';
+                    var txt = ind && ind.querySelector('#yh-pull-text');
+                    if (txt) txt.textContent = '刷新中…';
+                }
+                setTimeout(function() { location.reload(); }, 300);
+            } else if (state.cur > 0) {
+                resetPull();
+            }
+        }, { passive: true, capture: true });
+
+        document.addEventListener('touchcancel', function() {
+            if (state.active) { state.active = false; if (state.pulling) resetPull(); state.pulling = false; }
+        }, { passive: true, capture: true });
     }
 
     // 初始化
@@ -3010,5 +3115,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.217 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.218 by Embrace/19299');
 })();
