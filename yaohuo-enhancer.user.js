@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.216
+// @version      0.9.217
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -76,6 +76,10 @@
                 for (var i = 0; i < nodeList.length; i++) { if (nodeList[i] === this) return true; }
                 return false;
             };
+        }
+        // NodeList.forEach polyfill（老 WebView 的 querySelectorAll(...).forEach 会报错）
+        if (typeof NodeList !== 'undefined' && NodeList.prototype && !NodeList.prototype.forEach) {
+            NodeList.prototype.forEach = Array.prototype.forEach;
         }
     })();
 
@@ -215,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1,
     };
-    var YH_VERSION = '0.9.216';
+    var YH_VERSION = '0.9.217';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2504,7 +2508,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.216</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.217</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2579,16 +2583,20 @@ function f_threadView(force) {
             overlay.appendChild(box);
             document.body.appendChild(overlay);
             function close() { try { overlay.remove(); } catch (e) {} _settingsOpen = false; }
-            box.querySelector('.yh-settings-close').addEventListener('click', close);
-            overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
-            // 关键词管理按钮：打开关键词屏蔽弹窗
-            box.querySelectorAll('.yh-btn-kw').forEach(function(b) {
-                b.addEventListener('click', function(ev) {
-                    ev.stopPropagation();
-                    close();
-                    setTimeout(function() { try { toggleKwBlacklistPanel(); } catch (e2) {} }, 60);
-                });
-            });
+            try {
+                box.querySelector('.yh-settings-close').addEventListener('click', close);
+                overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+                // 关键词管理按钮：打开关键词屏蔽弹窗
+                var kwBtns = box.querySelectorAll('.yh-btn-kw');
+                for (var _kwi = 0; _kwi < kwBtns.length; _kwi++) {
+                    (function(b) {
+                        b.addEventListener('click', function(ev) {
+                            ev.stopPropagation();
+                            close();
+                            setTimeout(function() { try { toggleKwBlacklistPanel(); } catch (e2) {} }, 60);
+                        });
+                    })(kwBtns[_kwi]);
+                }
             // 自动保存：checkbox 变动即保存，部分选项自动刷新页面
             box.querySelectorAll('.yh-set').forEach(function(el) {
                 el.addEventListener('change', function() {
@@ -2646,6 +2654,7 @@ function f_threadView(force) {
                 el.addEventListener('input', updateColor);
                 el.addEventListener('change', updateColor);
             });
+            } catch (e3) { try { console.log('[YH] 设置面板绑定: ', e3); } catch (e4) {} }
             var chkBtn = box.querySelector('.yh-check-update');
             if (chkBtn) {
                 var _chkBusy = false;
@@ -3001,5 +3010,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.216 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.217 by Embrace/19299');
 })();
