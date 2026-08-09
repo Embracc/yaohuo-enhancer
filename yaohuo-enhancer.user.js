@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.215
+// @version      0.9.216
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -213,9 +213,9 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
-        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1,
+        fillReply: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1,
     };
-    var YH_VERSION = '0.9.215';
+    var YH_VERSION = '0.9.216';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2243,6 +2243,124 @@ function f_threadView(force) {
         if (group.firstChild) group.insertBefore(bb, group.firstChild);
         else group.appendChild(bb);
     }
+
+    // ===== 关键词屏蔽：列表页屏蔽含关键词的帖子 =====
+    var KEYWORD_KEY = 'yh_kw_blacklist';
+    function getKwBlacklist() {
+        try { var a = JSON.parse(localStorage.getItem(KEYWORD_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+    }
+    function saveKwBlacklist(arr) {
+        try { localStorage.setItem(KEYWORD_KEY, JSON.stringify(arr)); } catch(e) {}
+    }
+    // 列表页：隐藏标题含任一关键词的帖子
+    function f_kwFilter() {
+        if (!S.kwBlacklist) return;
+        if (!isList()) return;
+        var kws = getKwBlacklist().filter(function(k) { return k && String(k).trim(); });
+        if (!kws.length) return;
+        var items = document.querySelectorAll('.listdata');
+        for (var i = 0; i < items.length; i++) {
+            var el = items[i];
+            if (el.getAttribute('data-yh-kw') === '1') continue;
+            var titleEl = el.querySelector('a.topic-link[href*="/bbs-"]') || el.querySelector('.topic-link');
+            if (!titleEl) continue;
+            var title = (titleEl.textContent || '').trim();
+            var hit = false;
+            for (var j = 0; j < kws.length; j++) {
+                if (title.indexOf(kws[j]) !== -1) { hit = true; break; }
+            }
+            if (hit) {
+                el.style.display = 'none';
+                el.setAttribute('data-yh-kw', '1');
+            }
+        }
+    }
+    // 关键词屏蔽管理弹窗
+    var _kwPanelOpen = false;
+    function injectKwCss() {
+        if (document.getElementById('yh-kw-css')) return;
+        var st = document.createElement('style');
+        st.id = 'yh-kw-css';
+        st.textContent = '.yh-kw-item:hover{background:#fafafa}.yh-kw-del{color:#e74c3c;text-decoration:none;font-size:12px;padding:3px 12px;border:1px solid #ffcccc;border-radius:999px;transition:all .2s;background:#fff}.yh-kw-del:hover{background:#e74c3c;color:#fff!important;border-color:#e74c3c}';
+        (document.head || document.documentElement).appendChild(st);
+    }
+    function renderKwPanel(panel) {
+        var kws = getKwBlacklist();
+        var listHtml = '';
+        if (!kws.length) {
+            listHtml = '<div style="padding:30px 16px;text-align:center;color:#bbb;font-size:14px">暂无屏蔽关键词</div>';
+        } else {
+            listHtml = '<div style="padding:6px 14px">';
+            for (var i = 0; i < kws.length; i++) {
+                listHtml += '<div class="yh-kw-item" style="display:flex;align-items:center;justify-content:space-between;padding:10px 6px;border-bottom:1px solid #f2f2f2;font-size:13px">' +
+                    '<span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="padding:2px 10px;border-radius:999px;background:#fff3f3;color:#e74c3c;font-size:12px;flex-shrink:0">' + (i + 1) + '</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + kws[i] + '</span></span>' +
+                    '<a href="javascript:;" class="yh-kw-del" data-kw="' + String(kws[i]).replace(/"/g, '&quot;') + '">删除</a></div>';
+            }
+            listHtml += '</div>';
+        }
+        var body = panel.querySelector('.yh-kw-body');
+        body.innerHTML = listHtml;
+        // 删除按钮
+        var dels = body.querySelectorAll('.yh-kw-del');
+        for (var j = 0; j < dels.length; j++) {
+            (function(el) {
+                el.onclick = function(e) {
+                    e.preventDefault();
+                    var kw = el.getAttribute('data-kw');
+                    var arr = getKwBlacklist().filter(function(k) { return k !== kw; });
+                    saveKwBlacklist(arr);
+                    renderKwPanel(panel);
+                    // 立即刷新隐藏列表
+                    f_kwFilter();
+                };
+            })(dels[j]);
+        }
+        // 计数
+        var cnt = panel.querySelector('.yh-kw-head span');
+        if (cnt) cnt.textContent = '🔤 关键词屏蔽 (' + kws.length + '个)';
+    }
+    function toggleKwBlacklistPanel() {
+        if (_kwPanelOpen) {
+            var old = document.querySelector('.yh-kw-panel');
+            if (old) old.remove();
+            _kwPanelOpen = false;
+            return;
+        }
+        injectKwCss();
+        var wrap = document.createElement('div');
+        wrap.className = 'yh-kw-panel';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
+        var panel = document.createElement('div');
+        panel.style.cssText = 'width:340px;max-height:72vh;overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;';
+        panel.innerHTML = '<div class="yh-kw-head" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;border-radius:16px 16px 0 0"><span style="font-size:15px;font-weight:bold">🔤 关键词屏蔽 <span style="font-weight:normal;font-size:12px;opacity:.85"></span></span><span class="yh-kw-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div>' +
+            '<div style="padding:12px 14px;border-bottom:1px solid #ecf0f1;display:flex;gap:8px"><input class="yh-kw-input" placeholder="输入要屏蔽的关键词" style="flex:1;height:34px;border:1px solid #ddd;border-radius:8px;padding:0 10px;font-size:13px;outline:none;box-sizing:border-box" /><button class="yh-kw-add" style="height:34px;padding:0 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;flex-shrink:0">添加</button></div>' +
+            '<div class="yh-kw-body" style="flex:1;overflow-y:auto"></div>' +
+            '<div style="padding:10px 14px;font-size:11px;color:#aaa;border-top:1px solid #f0f0f0">命中标题含该关键词的帖子将在列表页自动隐藏</div>';
+        wrap.appendChild(panel);
+        document.body.appendChild(wrap);
+        _kwPanelOpen = true;
+        renderKwPanel(panel);
+        // 关闭
+        var closeBtn = panel.querySelector('.yh-kw-close');
+        if (closeBtn) closeBtn.onclick = function() { wrap.remove(); _kwPanelOpen = false; };
+        wrap.onclick = function(e) { if (e.target === wrap) { wrap.remove(); _kwPanelOpen = false; } };
+        // 添加
+        var input = panel.querySelector('.yh-kw-input');
+        var addBtn = panel.querySelector('.yh-kw-add');
+        function doAdd() {
+            var v = (input.value || '').trim();
+            if (!v) return;
+            var arr = getKwBlacklist();
+            if (arr.indexOf(v) === -1) { arr.push(v); saveKwBlacklist(arr); }
+            input.value = '';
+            renderKwPanel(panel);
+            f_kwFilter();
+            input.focus();
+        }
+        if (addBtn) addBtn.onclick = doAdd;
+        if (input) { input.onkeydown = function(e) { if (e.key === 'Enter') doAdd(); }; input.focus(); }
+    }
+
     var _settingsOpen = false;
     function closeSettingsPanel() {
         try {
@@ -2367,6 +2485,8 @@ function f_threadView(force) {
                 {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1},
                 {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1},
                 {k:'blacklist', l:'⛔ 黑名单', g:'界面'},
+                {k:'kwBlacklist', l:'🔤 关键词屏蔽', g:'界面'},
+                {btn:'kw', l:'✏️ 管理关键词', g:'界面', btnKw:1},
                 // 评论
                 {k:'loadAll', l:'📥 加载全部评论', g:'评论'},
                 {k:'threadView', l:'📋 楼中楼整理', g:'评论'},
@@ -2384,7 +2504,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.215</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.216</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2416,6 +2536,10 @@ function f_threadView(force) {
                         html += '<span style="font-size:12px;color:#555;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</span>';
                         html += '<span class="yh-opacity-val" style="font-size:11px;font-weight:bold;color:#1abc9c;margin:0 8px;min-width:30px;text-align:right">' + displayVal + displaySuffix + '</span>';
                         html += '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:90px;height:4px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#e8e8e8;border-radius:2px;cursor:pointer;flex-shrink:0">';
+                    } else if (item.btnKw) {
+                        var kwCnt = getKwBlacklist().length;
+                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                        html += '<button type="button" class="yh-btn-kw" data-kwpanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (kwCnt ? '管理 (' + kwCnt + ')' : '管理') + '</button>';
                     } else if (item.color) {
                         var curColor = S[item.k] || '#1abc9c';
                         html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
@@ -2457,6 +2581,14 @@ function f_threadView(force) {
             function close() { try { overlay.remove(); } catch (e) {} _settingsOpen = false; }
             box.querySelector('.yh-settings-close').addEventListener('click', close);
             overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+            // 关键词管理按钮：打开关键词屏蔽弹窗
+            box.querySelectorAll('.yh-btn-kw').forEach(function(b) {
+                b.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    close();
+                    setTimeout(function() { try { toggleKwBlacklistPanel(); } catch (e2) {} }, 60);
+                });
+            });
             // 自动保存：checkbox 变动即保存，部分选项自动刷新页面
             box.querySelectorAll('.yh-set').forEach(function(el) {
                 el.addEventListener('change', function() {
@@ -2842,6 +2974,7 @@ function f_threadView(force) {
         safe(f_imgZoom);
         safe(f_blacklist);
         safe(f_blacklistFilter);
+        safe(f_kwFilter);
         safe(ensureBlacklistBtn);
     }
 
@@ -2868,5 +3001,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.215 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.216 by Embrace/19299');
 })();
