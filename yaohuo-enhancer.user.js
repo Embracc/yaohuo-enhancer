@@ -1912,15 +1912,6 @@ function f_threadView(force) {
                 {l:'视频', tag:'[movie=100%*100%]视频直链地址|封面图片地址[/movie]', off:15},
                 {l:'媒体', tag:'[media]https://[/media]', off:7},
             ]},
-            {title:'特效/权限', items:[
-                {l:'飞行', tag:'[fly]文本[/fly]', off:5},
-                {l:'移动', tag:'[move]文本[/move]', off:6},
-                {l:'闪光', tag:'[flash]文本[/flash]', off:7},
-                {l:'隐藏', tag:'[hide]隐藏内容[/hide]', off:6},
-                {l:'回复可见', tag:'[reply]回复可见内容[/reply]', off:7},
-                {l:'时间', tag:'当前系统日期和时间：[now]', off:0},
-                {l:'倒计天', tag:'倒计天：[codo]2030-01-01[/codo]', off:0},
-            ]},
         ];
         var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2"><div><div style="font-size:16px;font-weight:bold">UBB 代码</div><div style="font-size:11px;opacity:.9;margin-top:2px">点标签插入到输入框</div></div><span class="yh-ubb-close" style="font-size:24px;cursor:pointer;line-height:1;padding:4px">&times;</span></div>';
         html += '<div style="padding:10px 14px 0"><a href="https://yaohuo.me/bbs/book_view_ubb.aspx?classid=177" target="_blank" style="display:inline-block;margin-bottom:8px;font-size:12px;color:#1abc9c;text-decoration:none;background:#e8f8f5;border:1px solid #b8e6d8;border-radius:999px;padding:4px 10px">📖 官方 UBB 说明</a></div>';
