@@ -174,7 +174,7 @@
     $.fn.eq = function(i) { return wrap(this[i]); };
     $.trim = function(s) { return (s || '').trim(); };
     $.parseHTML = function(h) { var d = document.createElement('div'); d.innerHTML = h; return d.children; };
-    window.$ = $;
+    // 注意：故意不覆盖 window.$，避免污染全局，影响其他依赖 jQuery 的脚本
 
     // 原生 AJAX（替代 GM_xmlhttpRequest）
     function xhr(opts) {
