@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.224
+// @version      0.9.225
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.224';
+    var YH_VERSION = '0.9.225';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1755,24 +1755,43 @@ function f_threadView(force) {
                 var curTa = findReplyTextarea(isReply) || ta;
                 if (!curTa) { alert('未找到输入框'); close(); return; }
                 zone.innerHTML = '<div style="font-size:13px;color:#1abc9c;font-weight:bold">⏳ 上传中...</div>';
-                var fd = new FormData();
-                fd.append('file', file);
-                xhr({
-                    method:'POST', url:'https://tc.qdqqd.com/uploadmt',
-                    data: fd,
-                    onload:function(res){
-                        try {
-                            var data = JSON.parse(res.responseText);
-                            var url = (data.data || '').split(/\s+/)[0] || '';
-                            if (url) {
-                                insertAtCursor(curTa, '\n' + (isImg ? '[img]' + url + '[/img]' : '[media]' + url + '[/media]') + '\n');
-                            }
-                        } catch(e) {}
-                        close();
-                    },
-                    onerror:function(){ close(); },
-                    ontimeout:function(){ close(); }
-                });
+                // 多图床尝试：柯艺云 → 美团
+                var hosts = [
+                    { url:'https://tc.qdqqd.com/uploadmt', field:'file' },
+                    { url:'https://aapi.helioho.st/upload.php', field:'image' }
+                ];
+                var tryIdx = 0;
+                function tryUpload() {
+                    if (tryIdx >= hosts.length) {
+                        zone.innerHTML = '<div style="font-size:13px;color:#e74c3c;font-weight:bold">❌ 上传失败，所有图床均不可用</div>';
+                        setTimeout(close, 2000);
+                        return;
+                    }
+                    var host = hosts[tryIdx++];
+                    var fd = new FormData();
+                    fd.append(host.field, file);
+                    xhr({
+                        method:'POST', url:host.url,
+                        data: fd,
+                        onload:function(res){
+                            try {
+                                var txt = res.responseText || '';
+                                var data = JSON.parse(txt);
+                                var url = (data.data || '').split(/\s+/)[0] || '';
+                                if (url && url.indexOf('http') === 0) {
+                                    insertAtCursor(curTa, '\n' + (isImg ? '[img]' + url + '[/img]' : '[media]' + url + '[/media]') + '\n');
+                                    close();
+                                    return;
+                                }
+                            } catch(e) {}
+                            // 当前图床失败，尝试下一个
+                            tryUpload();
+                        },
+                        onerror:function(){ tryUpload(); },
+                        ontimeout:function(){ tryUpload(); }
+                    });
+                }
+                tryUpload();
             }
             function close() { try { overlay.remove(); hideDropZone(); } catch(e) {} }
             // 安全兜底：30秒后自动关闭
@@ -1823,21 +1842,34 @@ function f_threadView(force) {
             if (!file) return;
             var curTa = findReplyTextarea(isReply) || ta;
             if (!curTa) { alert('未找到输入框'); return; }
-            var fd = new FormData(); fd.append('file', file);
-            xhr({
-                method:'POST', url:'https://tc.qdqqd.com/uploadmt', data:fd,
-                onload:function(res){
-                    try {
-                        var data = JSON.parse(res.responseText);
-                        var url = (data.data || '').split(/\s+/)[0] || '';
-                        if (url) {
-                            var tag = file.type.indexOf('image/') === 0 ? 'img' : 'media';
-                            insertAtCursor(curTa, '\n[' + tag + ']' + url + '[/' + tag + ']\n');
-                        } else alert('上传失败');
-                    } catch(e) { alert('上传失败'); }
-                },
-                onerror:function(){ alert('上传失败'); }
-            });
+            var hosts = [
+                { url:'https://tc.qdqqd.com/uploadmt', field:'file' },
+                { url:'https://aapi.helioho.st/upload.php', field:'image' }
+            ];
+            var tryIdx = 0;
+            function tryDropUpload() {
+                if (tryIdx >= hosts.length) { alert('上传失败，所有图床均不可用'); return; }
+                var host = hosts[tryIdx++];
+                var fd = new FormData(); fd.append(host.field, file);
+                xhr({
+                    method:'POST', url:host.url, data:fd,
+                    onload:function(res){
+                        try {
+                            var txt = res.responseText || '';
+                            var data = JSON.parse(txt);
+                            var url = (data.data || '').split(/\s+/)[0] || '';
+                            if (url && url.indexOf('http') === 0) {
+                                var tag = file.type.indexOf('image/') === 0 ? 'img' : 'media';
+                                insertAtCursor(curTa, '\n[' + tag + ']' + url + '[/' + tag + ']\n');
+                                return;
+                            }
+                        } catch(e) {}
+                        tryDropUpload();
+                    },
+                    onerror:function(){ tryDropUpload(); }
+                });
+            }
+            tryDropUpload();
         }
         // 页面级拖放检测
         var dropZone = null;
@@ -2541,7 +2573,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.224</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.225</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -3164,5 +3196,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.224 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.225 by Embrace/19299');
 })();
