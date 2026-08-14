@@ -1755,24 +1755,33 @@ function f_threadView(force) {
                 var curTa = findReplyTextarea(isReply) || ta;
                 if (!curTa) { alert('未找到输入框'); close(); return; }
                 zone.innerHTML = '<div style="font-size:13px;color:#1abc9c;font-weight:bold">⏳ 上传中...</div>';
-                // 多图床尝试：柯艺云 → 美团
-                var hosts = [
-                    { url:'https://tc.qdqqd.com/uploadmt', field:'file' },
-                    { url:'https://aapi.helioho.st/upload.php', field:'image' }
-                ];
+                // 图片用柯艺云+美团，视频只用柯艺云（美团的 field=image 不支持视频）
+                var hosts = isImg
+                    ? [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }, { url:'https://aapi.helioho.st/upload.php', field:'image' }]
+                    : [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }];
                 var tryIdx = 0;
+                var retries = {};  // 每个 host 最多重试 1 次
+                var uploadTimeout = isImg ? 20000 : 60000;  // 视频 60s
                 function tryUpload() {
                     if (tryIdx >= hosts.length) {
                         zone.innerHTML = '<div style="font-size:13px;color:#e74c3c;font-weight:bold">❌ 上传失败，所有图床均不可用</div>';
                         setTimeout(close, 2000);
                         return;
                     }
-                    var host = hosts[tryIdx++];
+                    var host = hosts[tryIdx];
+                    // 如果当前 host 已经重试过，跳到下一个
+                    if (retries[host.url] && retries[host.url] >= 1) {
+                        tryIdx++;
+                        tryUpload();
+                        return;
+                    }
+                    if (!retries[host.url]) retries[host.url] = 0;
                     var fd = new FormData();
                     fd.append(host.field, file);
                     xhr({
                         method:'POST', url:host.url,
                         data: fd,
+                        timeout: uploadTimeout,
                         onload:function(res){
                             try {
                                 var txt = res.responseText || '';
@@ -1784,11 +1793,12 @@ function f_threadView(force) {
                                     return;
                                 }
                             } catch(e) {}
-                            // 当前图床失败，尝试下一个
+                            // 解析失败，当前 host 重试一次
+                            retries[host.url]++;
                             tryUpload();
                         },
-                        onerror:function(){ tryUpload(); },
-                        ontimeout:function(){ tryUpload(); }
+                        onerror:function(){ retries[host.url]++; tryUpload(); },
+                        ontimeout:function(){ retries[host.url]++; tryUpload(); }
                     });
                 }
                 tryUpload();
@@ -1842,17 +1852,21 @@ function f_threadView(force) {
             if (!file) return;
             var curTa = findReplyTextarea(isReply) || ta;
             if (!curTa) { alert('未找到输入框'); return; }
-            var hosts = [
-                { url:'https://tc.qdqqd.com/uploadmt', field:'file' },
-                { url:'https://aapi.helioho.st/upload.php', field:'image' }
-            ];
+            // 图片用柯艺云+美团，视频只用柯艺云
+            var hosts = file.type.indexOf('image/') === 0
+                ? [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }, { url:'https://aapi.helioho.st/upload.php', field:'image' }]
+                : [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }];
             var tryIdx = 0;
+            var retries = {};
+            var uploadTimeout = file.type.indexOf('image/') === 0 ? 20000 : 60000;
             function tryDropUpload() {
                 if (tryIdx >= hosts.length) { alert('上传失败，所有图床均不可用'); return; }
-                var host = hosts[tryIdx++];
+                var host = hosts[tryIdx];
+                if (retries[host.url] && retries[host.url] >= 1) { tryIdx++; tryDropUpload(); return; }
+                if (!retries[host.url]) retries[host.url] = 0;
                 var fd = new FormData(); fd.append(host.field, file);
                 xhr({
-                    method:'POST', url:host.url, data:fd,
+                    method:'POST', url:host.url, data:fd, timeout: uploadTimeout,
                     onload:function(res){
                         try {
                             var txt = res.responseText || '';
@@ -1864,9 +1878,10 @@ function f_threadView(force) {
                                 return;
                             }
                         } catch(e) {}
-                        tryDropUpload();
+                        retries[host.url]++; tryDropUpload();
                     },
-                    onerror:function(){ tryDropUpload(); }
+                    onerror:function(){ retries[host.url]++; tryDropUpload(); },
+                    ontimeout:function(){ retries[host.url]++; tryDropUpload(); }
                 });
             }
             tryDropUpload();
