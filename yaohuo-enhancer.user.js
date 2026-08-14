@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.225
+// @version      0.9.226
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.225';
+    var YH_VERSION = '0.9.226';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1734,94 +1734,66 @@ function f_threadView(force) {
         ];
         if (isReply) tools.push({t:'+30', c:'#e67e22', act:'plus30'});
 
-        // 上传弹窗（支持点击选择 + 拖入）
-        function showUploadOverlay(type) {
-            var isImg = type === 'img';
-            var overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;';
-            var box = document.createElement('div');
-            box.style.cssText = 'background:#fff;border-radius:16px;padding:30px 24px;width:90%;max-width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.25);position:relative';
-            box.innerHTML = '<div style="font-size:40px;margin-bottom:10px">' + (isImg ? '🖼️' : '🎬') + '</div><div style="font-size:15px;font-weight:bold;color:#333;margin-bottom:4px">' + (isImg ? '上传图片' : '上传视频') + '</div><div style="font-size:12px;color:#999;margin-bottom:16px">点击选择文件，或将文件拖到这里</div><div class="yh-drop-zone" style="border:2px dashed #ddd;border-radius:12px;padding:30px 16px;margin-bottom:12px;background:#fafafa;transition:all .2s;cursor:pointer"><div style="font-size:14px;color:#1abc9c;font-weight:bold">📎 点击选择文件</div><div style="font-size:11px;color:#bbb;margin-top:4px">或拖入文件到此处</div></div><div style="font-size:11px;color:#ccc">' + (isImg ? '支持 JPG / PNG / GIF' : '支持 MP4 / AVI / MOV') + '</div>';
-            overlay.appendChild(box);
-            document.body.appendChild(overlay);
-            var zone = box.querySelector('.yh-drop-zone');
-            var fileInput2 = document.createElement('input');
-            fileInput2.type = 'file';
-            fileInput2.accept = isImg ? 'image/*' : 'video/*';
-            fileInput2.style.display = 'none';
-            box.appendChild(fileInput2);
-            function doUpload(file) {
-                if (!file) return;
-                var curTa = findReplyTextarea(isReply) || ta;
-                if (!curTa) { alert('未找到输入框'); close(); return; }
-                zone.innerHTML = '<div style="font-size:13px;color:#1abc9c;font-weight:bold">⏳ 上传中...</div>';
-                // 图片用柯艺云+美团，视频只用柯艺云（美团的 field=image 不支持视频）
-                var hosts = isImg
-                    ? [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }, { url:'https://aapi.helioho.st/upload.php', field:'image' }]
-                    : [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }];
-                var tryIdx = 0;
-                var retries = {};  // 每个 host 最多重试 1 次
-                var uploadTimeout = isImg ? 20000 : 60000;  // 视频 60s
-                function tryUpload() {
-                    if (tryIdx >= hosts.length) {
-                        zone.innerHTML = '<div style="font-size:13px;color:#e74c3c;font-weight:bold">❌ 上传失败，所有图床均不可用</div>';
-                        setTimeout(close, 2000);
-                        return;
-                    }
-                    var host = hosts[tryIdx];
-                    // 如果当前 host 已经重试过，跳到下一个
-                    if (retries[host.url] && retries[host.url] >= 1) {
-                        tryIdx++;
-                        tryUpload();
-                        return;
-                    }
-                    if (!retries[host.url]) retries[host.url] = 0;
-                    var fd = new FormData();
-                    fd.append(host.field, file);
-                    xhr({
-                        method:'POST', url:host.url,
-                        data: fd,
-                        timeout: uploadTimeout,
-                        onload:function(res){
-                            try {
-                                var txt = res.responseText || '';
-                                var data = JSON.parse(txt);
-                                var url = (data.data || '').split(/\s+/)[0] || '';
-                                if (url && url.indexOf('http') === 0) {
-                                    insertAtCursor(curTa, '\n' + (isImg ? '[img]' + url + '[/img]' : '[media]' + url + '[/media]') + '\n');
-                                    close();
-                                    return;
-                                }
-                            } catch(e) {}
-                            // 解析失败，当前 host 重试一次
-                            retries[host.url]++;
-                            tryUpload();
-                        },
-                        onerror:function(){ retries[host.url]++; tryUpload(); },
-                        ontimeout:function(){ retries[host.url]++; tryUpload(); }
-                    });
+        // 共享文件输入 + 上传状态提示
+        var filePicker = document.createElement('input');
+        filePicker.type = 'file';
+        filePicker.style.display = 'none';
+        bar.appendChild(filePicker);
+        var statusTip = document.createElement('div');
+        statusTip.style.cssText = 'display:none;font-size:12px;font-weight:bold;color:#1abc9c;padding:4px 8px;flex-shrink:0';
+        bar.appendChild(statusTip);
+
+        // 上传逻辑（图片用柯艺云+美团，视频只用柯艺云）
+        function doUpload(file, isImg) {
+            if (!file) return;
+            var curTa = findReplyTextarea(isReply) || ta;
+            if (!curTa) { alert('未找到输入框'); return; }
+            statusTip.style.display = 'inline';
+            statusTip.textContent = '⏳ 上传中...';
+            statusTip.style.color = '#1abc9c';
+            var hosts = isImg
+                ? [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }, { url:'https://aapi.helioho.st/upload.php', field:'image' }]
+                : [{ url:'https://tc.qdqqd.com/uploadmt', field:'file' }];
+            var tryIdx = 0;
+            var retries = {};
+            var uploadTimeout = isImg ? 20000 : 60000;
+            function tryUpload() {
+                if (tryIdx >= hosts.length) {
+                    statusTip.textContent = '❌ 上传失败';
+                    statusTip.style.color = '#e74c3c';
+                    setTimeout(function() { statusTip.style.display = 'none'; }, 2000);
+                    return;
                 }
-                tryUpload();
+                var host = hosts[tryIdx];
+                if (retries[host.url] && retries[host.url] >= 1) { tryIdx++; tryUpload(); return; }
+                if (!retries[host.url]) retries[host.url] = 0;
+                var fd = new FormData();
+                fd.append(host.field, file);
+                xhr({
+                    method:'POST', url:host.url,
+                    data: fd,
+                    timeout: uploadTimeout,
+                    onload:function(res){
+                        try {
+                            var txt = res.responseText || '';
+                            var data = JSON.parse(txt);
+                            var url = (data.data || '').split(/\s+/)[0] || '';
+                            if (url && url.indexOf('http') === 0) {
+                                insertAtCursor(curTa, '\n' + (isImg ? '[img]' + url + '[/img]' : '[media]' + url + '[/media]') + '\n');
+                                statusTip.textContent = '✓ 已插入';
+                                statusTip.style.color = '#27ae60';
+                                setTimeout(function() { statusTip.style.display = 'none'; }, 1500);
+                                return;
+                            }
+                        } catch(e) {}
+                        retries[host.url]++;
+                        tryUpload();
+                    },
+                    onerror:function(){ retries[host.url]++; tryUpload(); },
+                    ontimeout:function(){ retries[host.url]++; tryUpload(); }
+                });
             }
-            function close() { try { overlay.remove(); hideDropZone(); } catch(e) {} }
-            // 安全兜底：30秒后自动关闭
-            setTimeout(function() { try { overlay.remove(); hideDropZone(); } catch(e) {} }, 30000);
-            // 点击选择文件
-            zone.addEventListener('click', function() { fileInput2.click(); });
-            fileInput2.addEventListener('change', function() { if (this.files && this.files[0]) doUpload(this.files[0]); this.value = ''; });
-            // 拖入支持
-            zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.borderColor = '#1abc9c'; zone.style.background = '#e8f8f5'; });
-            zone.addEventListener('dragleave', function() { zone.style.borderColor = '#ddd'; zone.style.background = '#fafafa'; });
-            zone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                zone.style.borderColor = '#ddd'; zone.style.background = '#fafafa';
-                hideDropZone();
-                var files = e.dataTransfer && e.dataTransfer.files;
-                if (files && files.length) doUpload(files[0]);
-            });
-            // 点击遮罩关闭
-            overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+            tryUpload();
         }
 
         tools.forEach(function(item) {
@@ -1833,7 +1805,7 @@ function f_threadView(force) {
                 e.preventDefault(); e.stopPropagation();
                 var curTa = findReplyTextarea(isReply) || ta;
                 if (item.act === 'panel') toggleUBBPanel();
-                else if (item.act === 'img' || item.act === 'video') showUploadOverlay(item.act);
+                else if (item.act === 'img' || item.act === 'video') { filePicker.accept = item.act === 'img' ? 'image/*' : 'video/*'; filePicker.onchange = function() { if (this.files && this.files[0]) doUpload(this.files[0], item.act === 'img'); this.value = ''; }; filePicker.click(); }
                 else if (item.act === 'plus30') {
                     curTa.value = '+30';
                     try { curTa.dispatchEvent(new Event('input', {bubbles:true})); } catch (err) {}
@@ -2588,7 +2560,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.225</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.226</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -3211,5 +3183,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.225 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.226 by Embrace/19299');
 })();
