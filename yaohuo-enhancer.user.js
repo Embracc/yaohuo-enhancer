@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.226
+// @version      0.9.227
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.226';
+    var YH_VERSION = '0.9.227';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -1729,6 +1729,7 @@ function f_threadView(force) {
 
         var tools = [
             {t:'UBB', c:'#1abc9c', act:'panel'},
+            {t:'💬 常用', c:'#16a085', act:'phrase'},
             {t:'📷 图片', c:'#e74c3c', act:'img'},
             {t:'🎬 视频', c:'#9b59b6', act:'video'}
         ];
@@ -1805,6 +1806,18 @@ function f_threadView(force) {
                 e.preventDefault(); e.stopPropagation();
                 var curTa = findReplyTextarea(isReply) || ta;
                 if (item.act === 'panel') toggleUBBPanel();
+                else if (item.act === 'phrase') {
+                    var phrases = getQuickPhrases();
+                    if (!phrases.length) {
+                        try { showInfo('尚未设置常用语。请到 设置 → 常用语 中添加', '💬 常用语'); } catch (e3) {}
+                        return;
+                    }
+                    if (phrases.length === 1) {
+                        sendPhrase(curTa, phrases[0]);
+                        return;
+                    }
+                    showPhrasePicker(curTa, phrases);
+                }
                 else if (item.act === 'img' || item.act === 'video') { filePicker.accept = item.act === 'img' ? 'image/*' : 'video/*'; filePicker.onchange = function() { if (this.files && this.files[0]) doUpload(this.files[0], item.act === 'img'); this.value = ''; }; filePicker.click(); }
                 else if (item.act === 'plus30') {
                     curTa.value = '+30';
@@ -1908,6 +1921,57 @@ function f_threadView(force) {
         var ta = findReplyTextarea(isReply);
         if (!ta) return; // run() 会每 2s 重试，等发帖页 textarea 渲染出来
         mountUbbBar(ta, isReply);
+    }
+
+    // ===== 常用语：快捷发送预设内容 =====
+    var PHRASE_KEY = 'yh_quick_phrases';
+    function getQuickPhrases() {
+        try { var a = JSON.parse(localStorage.getItem(PHRASE_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+    }
+    function saveQuickPhrases(arr) {
+        try { localStorage.setItem(PHRASE_KEY, JSON.stringify(arr)); } catch(e) {}
+    }
+    // 将常用语填入回复框并发送（sub.click() 走 AJAX）
+    function sendPhrase(ta, phrase) {
+        if (!ta || !phrase) return;
+        try {
+            ta.value = phrase;
+            try { ta.dispatchEvent(new Event('input', {bubbles:true})); } catch (e1) {}
+            try { ta.dispatchEvent(new Event('keyup', {bubbles:true})); } catch (e2) {}
+            var form = ta.closest('form');
+            if (!form) { try { showInfo('未找到回复表单，无法发送'); } catch (e3) {} return; }
+            var sub = form.querySelector('input[type="submit"][name="g"], input[type="submit"], button[type="submit"]');
+            if (sub) sub.click(); else form.submit();
+        } catch (e) {}
+    }
+    // 多条常用语时弹出选择面板
+    var _phrasePickerOpen = false;
+    function showPhrasePicker(ta, phrases) {
+        if (_phrasePickerOpen) { var old = document.querySelector('.yh-phrase-picker'); if (old) old.remove(); _phrasePickerOpen = false; }
+        var wrap = document.createElement('div');
+        wrap.className = 'yh-phrase-picker';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
+        var panel = document.createElement('div');
+        panel.style.cssText = 'width:320px;max-height:70vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.25);padding:0 0 12px;';
+        var html = '<div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;border-radius:16px 16px 0 0"><span style="font-size:15px;font-weight:bold">💬 选择常用语</span><span class="yh-phrase-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8">&times;</span></div><div style="padding:6px 14px">';
+        for (var i = 0; i < phrases.length; i++) {
+            html += '<div class="yh-phrase-item" data-i="' + i + '" style="padding:10px 8px;border-bottom:1px solid #f2f2f2;font-size:13px;color:#333;cursor:pointer;transition:background .12s">' + phrases[i] + '</div>';
+        }
+        html += '</div>';
+        panel.innerHTML = html;
+        wrap.appendChild(panel);
+        document.body.appendChild(wrap);
+        _phrasePickerOpen = true;
+        function close() { wrap.remove(); _phrasePickerOpen = false; }
+        panel.querySelector('.yh-phrase-close').addEventListener('click', close);
+        wrap.addEventListener('click', function(e) { if (e.target === wrap) close(); });
+        panel.querySelectorAll('.yh-phrase-item').forEach(function(el) {
+            el.addEventListener('click', function() {
+                var idx = parseInt(this.getAttribute('data-i'), 10);
+                close();
+                sendPhrase(ta, phrases[idx]);
+            });
+        });
     }
 
     var _ubbPanelVisible = false;
@@ -2415,6 +2479,89 @@ function f_threadView(force) {
         if (input) { input.onkeydown = function(e) { if (e.key === 'Enter') doAdd(); }; input.focus(); }
     }
 
+    // 常用语管理弹窗
+    var _phraseMgrOpen = false;
+    function injectPhraseCss() {
+        if (document.getElementById('yh-phrase-css')) return;
+        var st = document.createElement('style');
+        st.id = 'yh-phrase-css';
+        st.textContent = '.yh-phrase-item:hover{background:#eefaf6}.yh-phrase-del{color:#e74c3c;text-decoration:none;font-size:12px;padding:3px 10px;border:1px solid #ffcccc;border-radius:999px;transition:all .2s;background:#fff;margin-left:8px}.yh-phrase-del:hover{background:#e74c3c;color:#fff!important;border-color:#e74c3c}';
+        (document.head || document.documentElement).appendChild(st);
+    }
+    function renderPhrasePanel(panel) {
+        var arr = getQuickPhrases();
+        var listHtml = '';
+        if (!arr.length) {
+            listHtml = '<div style="padding:30px 16px;text-align:center;color:#bbb;font-size:14px">暂无常用语</div>';
+        } else {
+            listHtml = '<div style="padding:6px 14px">';
+            for (var i = 0; i < arr.length; i++) {
+                listHtml += '<div class="yh-phrase-item" style="display:flex;align-items:center;justify-content:space-between;padding:10px 6px;border-bottom:1px solid #f2f2f2;font-size:13px">' +
+                    '<span style="flex:1;min-width:0;word-break:break-all">' + arr[i] + '</span>' +
+                    '<a href="javascript:;" class="yh-phrase-del" data-i="' + i + '">删除</a></div>';
+            }
+            listHtml += '</div>';
+        }
+        var body = panel.querySelector('.yh-phrase-body');
+        body.innerHTML = listHtml;
+        var dels = body.querySelectorAll('.yh-phrase-del');
+        for (var j = 0; j < dels.length; j++) {
+            (function(el) {
+                el.onclick = function(e) {
+                    e.preventDefault();
+                    var idx = parseInt(el.getAttribute('data-i'), 10);
+                    var arr2 = getQuickPhrases();
+                    arr2.splice(idx, 1);
+                    saveQuickPhrases(arr2);
+                    renderPhrasePanel(panel);
+                };
+            })(dels[j]);
+        }
+        var cnt = panel.querySelector('.yh-phrase-head span');
+        if (cnt) cnt.textContent = '💬 常用语 (' + arr.length + '条)';
+    }
+    function togglePhraseManager() {
+        if (_phraseMgrOpen) {
+            var old = document.querySelector('.yh-phrase-mgr');
+            if (old) old.remove();
+            _phraseMgrOpen = false;
+            return;
+        }
+        injectPhraseCss();
+        var wrap = document.createElement('div');
+        wrap.className = 'yh-phrase-mgr';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;';
+        var panel = document.createElement('div');
+        panel.style.cssText = 'width:340px;max-height:72vh;overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;';
+        panel.innerHTML = '<div class="yh-phrase-head" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;border-radius:16px 16px 0 0"><span style="font-size:15px;font-weight:bold">💬 常用语 <span style="font-weight:normal;font-size:12px;opacity:.85"></span></span><span class="yh-phrase-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div>' +
+            '<div style="padding:12px 14px;border-bottom:1px solid #ecf0f1;display:flex;gap:8px"><input class="yh-phrase-input" placeholder="输入常用语，回复栏点击「常用」一键发送" style="flex:1;height:34px;border:1px solid #ddd;border-radius:8px;padding:0 10px;font-size:13px;outline:none;box-sizing:border-box" /><button class="yh-phrase-add" style="height:34px;padding:0 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;flex-shrink:0">添加</button></div>' +
+            '<div class="yh-phrase-body" style="flex:1;overflow-y:auto"></div>' +
+            '<div style="padding:10px 14px;font-size:11px;color:#aaa;border-top:1px solid #f0f0f0">点击「删除」移除常用语；回复框 UBB 栏的「常用」按钮可快捷发送</div>';
+        wrap.appendChild(panel);
+        document.body.appendChild(wrap);
+        _phraseMgrOpen = true;
+        renderPhrasePanel(panel);
+        // 关闭
+        var closeBtn = panel.querySelector('.yh-phrase-close');
+        if (closeBtn) closeBtn.onclick = function() { wrap.remove(); _phraseMgrOpen = false; };
+        wrap.onclick = function(e) { if (e.target === wrap) { wrap.remove(); _phraseMgrOpen = false; } };
+        // 添加
+        var input = panel.querySelector('.yh-phrase-input');
+        var addBtn = panel.querySelector('.yh-phrase-add');
+        function doAdd() {
+            var v = (input.value || '').trim();
+            if (!v) return;
+            if (v.length > 500) v = v.substring(0, 500);
+            var arr = getQuickPhrases();
+            if (arr.indexOf(v) === -1) { arr.push(v); saveQuickPhrases(arr); }
+            input.value = '';
+            renderPhrasePanel(panel);
+            input.focus();
+        }
+        if (addBtn) addBtn.onclick = doAdd;
+        if (input) { input.onkeydown = function(e) { if (e.key === 'Enter') doAdd(); }; input.focus(); }
+    }
+
     var _settingsOpen = false;
     function closeSettingsPanel() {
         try {
@@ -2542,6 +2689,7 @@ function f_threadView(force) {
                 {k:'blacklist', l:'⛔ 黑名单', g:'界面'},
                 {k:'kwBlacklist', l:'🔤 关键词屏蔽', g:'界面'},
                 {btn:'kw', l:'✏️ 管理关键词', g:'界面', btnKw:1},
+                {btn:'phrase', l:'💬 管理常用语', g:'界面', btnPhrase:1},
                 // 评论
                 {k:'loadAll', l:'📥 加载全部评论', g:'评论'},
                 {k:'threadView', l:'📋 楼中楼整理', g:'评论'},
@@ -2560,7 +2708,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.226</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.227</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2596,6 +2744,10 @@ function f_threadView(force) {
                         var kwCnt = getKwBlacklist().length;
                         html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
                         html += '<button type="button" class="yh-btn-kw" data-kwpanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (kwCnt ? '管理 (' + kwCnt + ')' : '管理') + '</button>';
+                    } else if (item.btnPhrase) {
+                        var phrCnt = getQuickPhrases().length;
+                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                        html += '<button type="button" class="yh-btn-phrase" data-phrasepanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (phrCnt ? '管理 (' + phrCnt + ')' : '管理') + '</button>';
                     } else if (item.color) {
                         var curColor = S[item.k] || '#1abc9c';
                         html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
@@ -2648,6 +2800,17 @@ function f_threadView(force) {
                             setTimeout(function() { try { toggleKwBlacklistPanel(); } catch (e2) {} }, 60);
                         });
                     })(kwBtns[_kwi]);
+                }
+                // 常用语管理按钮
+                var phrBtns = box.querySelectorAll('.yh-btn-phrase');
+                for (var _phi = 0; _phi < phrBtns.length; _phi++) {
+                    (function(b) {
+                        b.addEventListener('click', function(ev) {
+                            ev.stopPropagation();
+                            close();
+                            setTimeout(function() { try { togglePhraseManager(); } catch (e2) {} }, 60);
+                        });
+                    })(phrBtns[_phi]);
                 }
             // 自动保存：checkbox 变动即保存，部分选项自动刷新页面
             box.querySelectorAll('.yh-set').forEach(function(el) {
@@ -3183,5 +3346,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.226 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.227 by Embrace/19299');
 })();
