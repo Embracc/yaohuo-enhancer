@@ -3522,16 +3522,19 @@ function f_threadView(force) {
                     var oldItems = document.querySelectorAll('.listdata');
                     if (oldItems.length && newItems.length) {
                         var parent = oldItems[0].parentNode;
-                        // 锚点 = 第一个旧项的下一个兄弟（保留相对位置）
-                        var anchor = oldItems[0].nextSibling;
+                        if (!parent) { cb(false); return; }
+                        // 用占位标记锚定第一个旧项的位置（旧项删除后锚点不会悬空）
+                        var marker = document.createTextNode('');
+                        parent.insertBefore(marker, oldItems[0]);
                         // 删除所有旧列表项
                         for (var i = 0; i < oldItems.length; i++) {
                             if (oldItems[i].parentNode) oldItems[i].parentNode.removeChild(oldItems[i]);
                         }
-                        // 在锚点前插入所有新列表项
+                        // 逐个插入新项到 marker 前
                         for (var j = 0; j < newItems.length; j++) {
-                            parent.insertBefore(newItems[j], anchor);
+                            parent.insertBefore(newItems[j], marker);
                         }
+                        parent.removeChild(marker);
                         try { run(); } catch (e2) {}
                         setTimeout(function() { window.scrollTo(0, scrollY); }, 50);
                         cb(true);
