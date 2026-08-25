@@ -3485,8 +3485,8 @@ function f_threadView(force) {
                 }
                 // 保存滚动位置，刷新后恢复
                 try { sessionStorage.setItem('yh_pull_scroll', String(window.pageYOffset || document.documentElement.scrollTop || 0)); } catch(e) {}
-                // 强制刷新（跳过缓存，类似 Ctrl+F5，确保拿到最新内容）
-                location.reload(true);
+                // 先显示"刷新中…"动画 300ms，再刷新（避免直接跳成浏览器原生刷新，无反馈）
+                setTimeout(function() { location.reload(); }, 300);
             } else if (state.cur > 0) {
                 resetPull();
             }
