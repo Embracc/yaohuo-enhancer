@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.228
+// @version      0.9.229
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -217,9 +217,9 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
-        fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
+        fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, imgBlur: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.228';
+    var YH_VERSION = '0.9.229';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2719,6 +2719,7 @@ function f_threadView(force) {
                 {k:'lazyLoad', l:'📜 自动加载更多', g:'评论'},
                 {k:'eatMeat', l:'🥩 自动吃肉', g:'评论'},
                 {k:'imgZoom', l:'🖼️ 图片点击放大', g:'评论', sub:1},
+                {k:'imgBlur', l:'🔒 图片模糊预览', g:'评论', sub:1},
                 // 更新
                 {k:'autoUpdate', l:'🔄 自动检测更新', g:'更新'},
             ];
@@ -2728,7 +2729,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.228</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.229</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -3054,6 +3055,12 @@ function f_threadView(force) {
             if (img.getAttribute('data-yh-zoom') === '1') continue;
             img.setAttribute('data-yh-zoom', '1');
             img.style.cursor = 'zoom-in';
+            // 模糊预览模式：默认模糊，点击打开全屏原图
+            if (S.imgBlur) {
+                img.setAttribute('data-yh-blur', '1');
+                img.style.filter = 'blur(14px)';
+                img.style.transition = 'filter .2s';
+            }
             img.addEventListener('click', function(e) {
                 if (e) { e.preventDefault(); e.stopPropagation(); }
                 var src = this.getAttribute('src') || '';
@@ -3061,6 +3068,8 @@ function f_threadView(force) {
                 if (src.indexOf('http') !== 0) {
                     try { src = new URL(src, location.origin).href; } catch (e2) { return; }
                 }
+                // 模糊模式点击时清除模糊（马上看到原图，即使全屏弹窗慢也有反馈）
+                if (this.getAttribute('data-yh-blur') === '1') { this.style.filter = 'none'; this.removeAttribute('data-yh-blur'); }
                 showImageZoom(src);
             });
         }
@@ -3370,5 +3379,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.228 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.229 by Embrace/19299');
 })();
