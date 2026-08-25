@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.232
+// @version      0.9.233
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, imgBlur: 1, imgZoomSize: 60, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.232';
+    var YH_VERSION = '0.9.233';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2742,7 +2742,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.232</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.233</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2750,11 +2750,13 @@ function f_threadView(force) {
                 if (g === '分屏' && !S.splitView) return;
                 // 卡片开始
                 html += '<div style="margin:10px 0;border-radius:10px;overflow:hidden;border:1px solid #ecf0f1;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.04)">';
-                // 卡片标题
-                html += '<div style="padding:8px 12px;background:#f8fafb;border-bottom:1px solid #ecf0f1;font-size:11px;font-weight:bold;color:#7f8c8d;letter-spacing:1px;display:flex;align-items:center;gap:6px">';
+                // 卡片标题（可点击展开/收起）
+                html += '<div class="yh-group-title" data-group="' + g + '" style="padding:8px 12px;background:#f8fafb;border-bottom:1px solid #ecf0f1;font-size:11px;font-weight:bold;color:#7f8c8d;letter-spacing:1px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">';
                 var icons = {浏览:'📖', 分屏:'🖥️', 界面:'🎨', 评论:'💬', 更新:'🔄'};
-                html += '<span style="font-size:13px">' + (icons[g]||'') + '</span><span>' + groupNames[g] + '</span></div>';
-                // 列表项
+                html += '<span style="font-size:13px">' + (icons[g]||'') + '</span><span>' + groupNames[g] + '</span>';
+                html += '<span class="yh-group-arrow" style="margin-left:auto;font-size:10px;color:#bbb;transition:transform .2s">▶</span></div>';
+                // 列表项（默认收起）
+                html += '<div class="yh-group-body" data-group="' + g + '" style="display:none">';
                 html += '<div style="display:flex;flex-direction:column">';
                 groups[g].forEach(function(item) {
                     var isSub = !!item.sub || (item.l && item.l.indexOf('   ') === 0);
@@ -2824,6 +2826,21 @@ function f_threadView(force) {
             try {
                 box.querySelector('.yh-settings-close').addEventListener('click', close);
                 overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+                // 分组标题展开/收起
+                var _groupTitles = box.querySelectorAll('.yh-group-title');
+                for (var _gti = 0; _gti < _groupTitles.length; _gti++) {
+                    (function(gt) {
+                        gt.addEventListener('click', function() {
+                            var g = gt.getAttribute('data-group');
+                            var body = box.querySelector('.yh-group-body[data-group="' + g + '"]');
+                            var arrow = gt.querySelector('.yh-group-arrow');
+                            if (!body) return;
+                            var isOpen = body.style.display !== 'none';
+                            body.style.display = isOpen ? 'none' : 'block';
+                            if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+                        });
+                    })(_groupTitles[_gti]);
+                }
                 // 关键词管理按钮：打开关键词屏蔽弹窗
                 var kwBtns = box.querySelectorAll('.yh-btn-kw');
                 for (var _kwi = 0; _kwi < kwBtns.length; _kwi++) {
@@ -3399,5 +3416,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.232 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.233 by Embrace/19299');
 })();
