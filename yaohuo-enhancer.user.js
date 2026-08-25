@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.227
+// @version      0.9.228
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -217,9 +217,9 @@
     var KEY = 'yh_enhancer';
     var DEFAULTS = {
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
-        fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
+        fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.227';
+    var YH_VERSION = '0.9.228';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -268,16 +268,17 @@
     function f_topBtn() {
         if (!S.topBtn) return;
         if ($('.yh-btn-group').length) return;
+        var _bsz = parseInt(S.btnSize, 10) || 40;
         var group = $('<div class="yh-btn-group" style="position:fixed;right:15px;bottom:15px;z-index:999;display:flex;flex-direction:column;gap:6px;align-items:center"></div>');
-        var tb = $('<button class="yh-tb" style="width:40px;height:40px;border:1px solid #1abc9c;border-radius:50%;background:#fff;color:#1abc9c;cursor:pointer;font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center" title="回到顶部">↑</button>');
+        var tb = $('<button class="yh-tb" style="width:' + _bsz + 'px;height:' + _bsz + 'px;border:1px solid #1abc9c;border-radius:50%;background:#fff;color:#1abc9c;cursor:pointer;font-size:' + Math.round(_bsz * 0.5) + 'px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center" title="回到顶部">↑</button>');
         tb.on('click', function() { $('html,body').animate({scrollTop:0},300); });
         group.append(tb);
         // 回到底部按钮
-        var db = $('<button class="yh-db" style="width:40px;height:40px;border:1px solid #3498db;border-radius:50%;background:#fff;color:#3498db;cursor:pointer;font-size:20px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation" title="回到底部">↓</button>');
+        var db = $('<button class="yh-db" style="width:' + _bsz + 'px;height:' + _bsz + 'px;border:1px solid #3498db;border-radius:50%;background:#fff;color:#3498db;cursor:pointer;font-size:' + Math.round(_bsz * 0.5) + 'px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation" title="回到底部">↓</button>');
         db.on('click', function() { $('html,body').animate({scrollTop:document.body.scrollHeight},300); });
         group.append(db);
         if (S.levelBtn) {
-            var lb = $('<button class="yh-lv" style="width:40px;height:40px;border:1px solid #f39c12;border-radius:50%;background:#fff;color:#f39c12;cursor:pointer;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-weight:bold;-webkit-tap-highlight-color:transparent;touch-action:manipulation" title="查询等级">Lv</button>');
+            var lb = $('<button class="yh-lv" style="width:' + _bsz + 'px;height:' + _bsz + 'px;border:1px solid #f39c12;border-radius:50%;background:#fff;color:#f39c12;cursor:pointer;font-size:' + Math.round(_bsz * 0.4) + 'px;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-weight:bold;-webkit-tap-highlight-color:transparent;touch-action:manipulation" title="查询等级">Lv</button>');
             var _lvTap = function(e) {
                 if (e && e.type === 'touchend') e.preventDefault();
                 queryLevel(lb);
@@ -2583,6 +2584,24 @@ function f_threadView(force) {
             }
         } catch (e) {}
     }
+    function applyBtnSize(val) {
+        val = parseInt(val, 10) || 40;
+        if (val < 28) val = 28;
+        if (val > 72) val = 72;
+        var fs1 = Math.round(val * 0.5), fs2 = Math.round(val * 0.4);
+        try {
+            var group = document.querySelector('.yh-btn-group');
+            if (!group) return;
+            var btns = group.querySelectorAll('button');
+            for (var i = 0; i < btns.length; i++) {
+                var b = btns[i];
+                b.style.width = val + 'px';
+                b.style.height = val + 'px';
+                if (b.classList && b.classList.contains('yh-lv')) b.style.fontSize = fs2 + 'px';
+                else b.style.fontSize = fs1 + 'px';
+            }
+        } catch (e) {}
+    }
     function ensureSettingsCss() {
 
         if (document.getElementById('yh-settings-btn-global-css')) return;
@@ -2684,6 +2703,7 @@ function f_threadView(force) {
                 {k:'opTag', l:'🏷️ 楼主标签', g:'界面', sub:1},
                 {k:'ubbHelp', l:'🎨 UBB 工具栏', g:'界面', sub:1},
                 {k:'btnOpacity', l:'⚙ 设置按钮不透明度', g:'界面', sub:1, range:1},
+                {k:'btnSize', l:'🔘 按钮大小', g:'界面', sub:1, range:1, min:32, max:60, step:2},
                 {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1},
                 {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1},
                 {k:'blacklist', l:'⛔ 黑名单', g:'界面'},
@@ -2708,7 +2728,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.227</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.228</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2848,6 +2868,8 @@ function f_threadView(force) {
                     save();
                     if (key === 'btnOpacity') {
                         applyBtnOpacity(val);
+                    } else if (key === 'btnSize') {
+                        applyBtnSize(val);
                     } else if (key === 'splitRatio' || key === 'splitPadding') {
                         applySplitStyle();
                     }
@@ -3201,9 +3223,11 @@ function f_threadView(force) {
         safe(f_kwFilter);
         safe(ensureBlacklistBtn);
         safe(applyBtnOpacityWrap);
+        safe(applyBtnSizeWrap);
         if (!inIframe) safe(f_pullRefresh);
     }
     function applyBtnOpacityWrap() { applyBtnOpacity(S.btnOpacity); }
+    function applyBtnSizeWrap() { applyBtnSize(S.btnSize); }
 
     // 下拉刷新（VIA 无此功能）：页面顶部下拉超过阈值松开即刷新
     var _pullBound = false;
@@ -3346,5 +3370,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.227 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.228 by Embrace/19299');
 })();
