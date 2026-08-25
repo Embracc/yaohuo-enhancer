@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.233
+// @version      0.9.234
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, imgBlur: 1, imgZoomSize: 60, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.233';
+    var YH_VERSION = '0.9.234';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2701,38 +2701,38 @@ function f_threadView(force) {
             box.style.cssText = 'background:#fff;border-radius:14px;padding:0;width:100%;max-width:400px;max-height:80vh;overflow:auto;box-shadow:0 10px 36px rgba(0,0,0,.22)';
             var items = [
                 // 浏览
-                {k:'newTab', l:'🔗 新标签打开', g:'浏览', refresh:1},
-                {k:'splitView', l:'📺 分屏预览', g:'浏览', refresh:1},
-                {k:'floatPreview', l:'🪟 浮窗预览', g:'浏览', refresh:1},
-                {k:'showTime', l:'🕐 列表时间显示', g:'浏览', sub:1},
-                {k:'pullRefresh', l:'⬇️ 下拉刷新', g:'浏览'},
+                {k:'newTab', l:'🔗 新标签打开', g:'浏览', refresh:1, $g:'列表'},
+                {k:'splitView', l:'📺 分屏预览', g:'浏览', refresh:1, $g:'预览'},
+                {k:'floatPreview', l:'🪟 浮窗预览', g:'浏览', refresh:1, $g:'预览'},
+                {k:'showTime', l:'🕐 列表时间显示', g:'浏览', sub:1, $g:'列表'},
+                {k:'pullRefresh', l:'⬇️ 下拉刷新', g:'浏览', $g:'列表'},
                 // 分屏（仅分屏开启时显示）
                 {k:'splitRatio', l:'📐 左侧占比%', g:'分屏', range:1, min:20, max:60, step:1, dep:'splitView'},
                 {k:'splitPadding', l:'📏 左侧边距(px)', g:'分屏', range:1, min:0, max:50, step:1, dep:'splitView'},
-                // 界面：主开关 + 子选项（sub 对齐）                // 界面：主开关 + 子选项（sub 对齐）
-                {k:'topBtn', l:'🔘 浮动按钮', g:'界面'},
-                {k:'levelBtn', l:'📊 等级查询', g:'界面', sub:1},
-                {k:'opTag', l:'🏷️ 楼主标签', g:'界面', sub:1},
-                {k:'ubbHelp', l:'🎨 UBB 工具栏', g:'界面', sub:1},
-                {k:'btnOpacity', l:'⚙ 设置按钮不透明度', g:'界面', sub:1, range:1},
-                {k:'btnSize', l:'🔘 按钮大小', g:'界面', sub:1, range:1, min:32, max:60, step:2},
-                {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1},
-                {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1},
-                {k:'blacklist', l:'⛔ 黑名单', g:'界面'},
-                {k:'kwBlacklist', l:'🔤 关键词屏蔽', g:'界面'},
-                {btn:'kw', l:'✏️ 管理关键词', g:'界面', btnKw:1},
-                {btn:'phrase', l:'💬 管理常用语', g:'界面', btnPhrase:1},
+                // 界面：主开关 + 子选项（sub 对齐）
+                {k:'topBtn', l:'🔘 浮动按钮', g:'界面', $g:'按钮'},
+                {k:'levelBtn', l:'📊 等级查询', g:'界面', sub:1, $g:'按钮'},
+                {k:'btnOpacity', l:'⚙ 设置按钮不透明度', g:'界面', sub:1, range:1, $g:'按钮'},
+                {k:'btnSize', l:'🔘 按钮大小', g:'界面', sub:1, range:1, min:32, max:60, step:2, $g:'按钮'},
+                {k:'opTag', l:'🏷️ 楼主标签', g:'界面', sub:1, $g:'外观'},
+                {k:'ubbHelp', l:'🎨 UBB 工具栏', g:'界面', sub:1, $g:'外观'},
+                {k:'opColor', l:'🎨 楼主标签颜色', g:'界面', sub:1, color:1, $g:'外观'},
+                {k:'plusColor', l:'🎨 +1 按钮颜色', g:'界面', sub:1, color:1, $g:'外观'},
+                {k:'blacklist', l:'⛔ 黑名单', g:'界面', $g:'屏蔽'},
+                {k:'kwBlacklist', l:'🔤 关键词屏蔽', g:'界面', $g:'屏蔽'},
+                {btn:'kw', l:'✏️ 管理关键词', g:'界面', btnKw:1, $g:'屏蔽'},
+                {btn:'phrase', l:'💬 管理常用语', g:'界面', btnPhrase:1, $g:'常用语'},
                 // 评论
-                {k:'loadAll', l:'📥 加载全部评论', g:'评论'},
-                {k:'threadView', l:'📋 楼中楼整理', g:'评论'},
-                {k:'repeat', l:'🔁 复读机', g:'评论'},
-                {k:'fillReply', l:'📋 复制评论', g:'评论', sub:1},
-                {k:'fillReplyAuto', l:'  自动填入回复框', g:'评论', sub:1},
-                {k:'lazyLoad', l:'📜 自动加载更多', g:'评论'},
-                {k:'eatMeat', l:'🥩 自动吃肉', g:'评论'},
-                {k:'imgZoom', l:'🖼️ 图片点击放大', g:'评论', sub:1},
-                {k:'imgBlur', l:'🔒 图片模糊预览', g:'评论', sub:1},
-                {k:'imgZoomSize', l:'📉 浏览图片缩小 %', g:'评论', sub:1, range:1, min:30, max:100, step:5},
+                {k:'loadAll', l:'📥 加载全部评论', g:'评论', $g:'加载'},
+                {k:'threadView', l:'📋 楼中楼整理', g:'评论', $g:'加载'},
+                {k:'lazyLoad', l:'📜 自动加载更多', g:'评论', $g:'加载'},
+                {k:'repeat', l:'🔁 复读机', g:'评论', $g:'回复'},
+                {k:'fillReply', l:'📋 复制评论', g:'评论', sub:1, $g:'回复'},
+                {k:'fillReplyAuto', l:'  自动填入回复框', g:'评论', sub:1, $g:'回复'},
+                {k:'eatMeat', l:'🥩 自动吃肉', g:'评论', $g:'自动'},
+                {k:'imgZoom', l:'🖼️ 图片点击放大', g:'评论', sub:1, $g:'图片'},
+                {k:'imgBlur', l:'🔒 图片模糊预览', g:'评论', sub:1, $g:'图片'},
+                {k:'imgZoomSize', l:'📉 浏览图片缩小 %', g:'评论', sub:1, range:1, min:30, max:100, step:5, $g:'图片'},
                 // 更新
                 {k:'autoUpdate', l:'🔄 自动检测更新', g:'更新'},
             ];
@@ -2742,7 +2742,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.233</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.234</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -2758,48 +2758,109 @@ function f_threadView(force) {
                 // 列表项（默认收起）
                 html += '<div class="yh-group-body" data-group="' + g + '" style="display:none">';
                 html += '<div style="display:flex;flex-direction:column">';
-                groups[g].forEach(function(item) {
-                    var isSub = !!item.sub || (item.l && item.l.indexOf('   ') === 0);
-                    var label = (item.l || '').replace(/^\s+/, '');
-                    var isRange = !!item.range;
-                    // 子项缩进
-                    var padLeft = isSub ? 'padding-left:28px' : '';
-                                        html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';border-bottom:1px solid #f5f5f5;transition:background .12s" class="yh-setting-row">';
-                    if (isRange) {
-                        var curVal = (S[item.k] !== undefined ? S[item.k] : 1);
-                        var minV = item.min !== undefined ? item.min : 0.05;
-                        var maxV = item.max !== undefined ? item.max : 1;
-                        var stepV = item.step !== undefined ? item.step : 0.01;
-                        var isPct = maxV > 1;
-                        var displayVal = isPct ? Math.round(curVal) : (stepV >= 1 ? Math.round(curVal) : Math.round(curVal * 100));
-                        var displaySuffix = isPct ? '' : '%';
-                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</span>';
-                        html += '<span class="yh-opacity-val" style="font-size:11px;font-weight:bold;color:#1abc9c;margin:0 8px;min-width:30px;text-align:right">' + displayVal + displaySuffix + '</span>';
-                        html += '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:90px;height:4px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#e8e8e8;border-radius:2px;cursor:pointer;flex-shrink:0">';
-                    } else if (item.btnKw) {
-                        var kwCnt = getKwBlacklist().length;
-                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
-                        html += '<button type="button" class="yh-btn-kw" data-kwpanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (kwCnt ? '管理 (' + kwCnt + ')' : '管理') + '</button>';
-                    } else if (item.btnPhrase) {
-                        var phrCnt = getQuickPhrases().length;
-                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
-                        html += '<button type="button" class="yh-btn-phrase" data-phrasepanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (phrCnt ? '管理 (' + phrCnt + ')' : '管理') + '</button>';
-                    } else if (item.color) {
-                        var curColor = S[item.k] || '#1abc9c';
-                        html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
-                        html += '<input type="color" class="yh-set-color" data-key="' + item.k + '" value="' + curColor + '" style="width:28px;height:28px;padding:0;border:2px solid #e8e8e8;border-radius:6px;cursor:pointer;background:none;flex-shrink:0">';
+                // 按子分类分组
+                var subGroups = {};
+                var subOrder = [];
+                groups[g].forEach(function(it) {
+                    var sg = it.$g || '';
+                    if (!sg) sg = '_flat';
+                    if (!subGroups[sg]) { subGroups[sg] = []; subOrder.push(sg); }
+                    subGroups[sg].push(it);
+                });
+                // 渲染子分类
+                subOrder.forEach(function(sg) {
+                    var sgItems = subGroups[sg];
+                    if (sg === '_flat') {
+                        // 无子分类，直接平铺
+                        sgItems.forEach(function(item) {
+                            var isSub = !!item.sub || (item.l && item.l.indexOf('   ') === 0);
+                            var label = (item.l || '').replace(/^\s+/, '');
+                            var isRange = !!item.range;
+                            var padLeft = isSub ? 'padding-left:28px' : '';
+                            html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';border-bottom:1px solid #f5f5f5;transition:background .12s" class="yh-setting-row">';
+                            if (isRange) {
+                                var curVal = (S[item.k] !== undefined ? S[item.k] : 1);
+                                var minV = item.min !== undefined ? item.min : 0.05;
+                                var maxV = item.max !== undefined ? item.max : 1;
+                                var stepV = item.step !== undefined ? item.step : 0.01;
+                                var isPct = maxV > 1;
+                                var displayVal = isPct ? Math.round(curVal) : (stepV >= 1 ? Math.round(curVal) : Math.round(curVal * 100));
+                                var displaySuffix = isPct ? '' : '%';
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</span>';
+                                html += '<span class="yh-opacity-val" style="font-size:11px;font-weight:bold;color:#1abc9c;margin:0 8px;min-width:30px;text-align:right">' + displayVal + displaySuffix + '</span>';
+                                html += '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:90px;height:4px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#e8e8e8;border-radius:2px;cursor:pointer;flex-shrink:0">';
+                            } else if (item.btnKw) {
+                                var kwCnt = getKwBlacklist().length;
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<button type="button" class="yh-btn-kw" data-kwpanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (kwCnt ? '管理 (' + kwCnt + ')' : '管理') + '</button>';
+                            } else if (item.btnPhrase) {
+                                var phrCnt = getQuickPhrases().length;
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<button type="button" class="yh-btn-phrase" data-phrasepanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (phrCnt ? '管理 (' + phrCnt + ')' : '管理') + '</button>';
+                            } else if (item.color) {
+                                var curColor = S[item.k] || '#1abc9c';
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<input type="color" class="yh-set-color" data-key="' + item.k + '" value="' + curColor + '" style="width:28px;height:28px;padding:0;border:2px solid #e8e8e8;border-radius:6px;cursor:pointer;background:none;flex-shrink:0">';
+                            } else {
+                                var checked = S[item.k] ? 'checked' : '';
+                                var isOn = S[item.k] ? 1 : 0;
+                                html += '<span style="font-size:12px;color:#' + (isSub ? '888' : '333') + ';flex:1;min-width:0">' + label + '</span>';
+                                html += '<label style="position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;cursor:pointer">';
+                                html += '<input type="checkbox" class="yh-set" data-key="' + item.k + '" ' + checked + ' data-refresh="' + (item.refresh||'') + '" style="opacity:0;width:0;height:0;position:absolute">';
+                                html += '<span class="yh-toggle-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isOn ? '#1abc9c' : '#d5d5d5') + ';border-radius:20px;transition:background .25s"></span>';
+                                html += '<span class="yh-toggle-knob" style="position:absolute;content:\"\";height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:' + (isOn ? 'translateX(14px)' : 'translateX(0)') + '"></span>';
+                                html += '</label>';
+                            }
+                            html += '</div>';
+                        });
                     } else {
-                        var checked = S[item.k] ? 'checked' : '';
-                        var isOn = S[item.k] ? 1 : 0;
-                        html += '<span style="font-size:12px;color:#' + (isSub ? '888' : '333') + ';flex:1;min-width:0">' + label + '</span>';
-                        // Toggle switch
-                        html += '<label style="position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;cursor:pointer">';
-                        html += '<input type="checkbox" class="yh-set" data-key="' + item.k + '" ' + checked + ' data-refresh="' + (item.refresh||'') + '" style="opacity:0;width:0;height:0;position:absolute">';
-                        html += '<span class="yh-toggle-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isOn ? '#1abc9c' : '#d5d5d5') + ';border-radius:20px;transition:background .25s"></span>';
-                        html += '<span class="yh-toggle-knob" style="position:absolute;content:\"\";height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:' + (isOn ? 'translateX(14px)' : 'translateX(0)') + '"></span>';
-                        html += '</label>';
+                        // 子分类标题（可折叠，默认展开）
+                        html += '<div class="yh-subgroup-title" data-sg="' + sg + '" style="padding:5px 12px;background:#fafafa;border-bottom:1px solid #f0f0f0;font-size:11px;font-weight:bold;color:#999;display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none">';
+                        html += '<span class="yh-subgroup-arrow" style="font-size:8px;color:#ccc;transition:transform .2s">▼</span><span>' + sg + '</span></div>';
+                        html += '<div class="yh-subgroup-body" data-sg="' + sg + '" style="">';
+                        sgItems.forEach(function(item) {
+                            var isSub = !!item.sub || (item.l && item.l.indexOf('   ') === 0);
+                            var label = (item.l || '').replace(/^\s+/, '');
+                            var isRange = !!item.range;
+                            var padLeft = isSub ? 'padding-left:28px' : '';
+                            html += '<div style="display:flex;align-items:center;min-height:36px;padding:4px 12px;' + padLeft + ';border-bottom:1px solid #f5f5f5;transition:background .12s" class="yh-setting-row">';
+                            if (isRange) {
+                                var curVal = (S[item.k] !== undefined ? S[item.k] : 1);
+                                var minV = item.min !== undefined ? item.min : 0.05;
+                                var maxV = item.max !== undefined ? item.max : 1;
+                                var stepV = item.step !== undefined ? item.step : 0.01;
+                                var isPct = maxV > 1;
+                                var displayVal = isPct ? Math.round(curVal) : (stepV >= 1 ? Math.round(curVal) : Math.round(curVal * 100));
+                                var displaySuffix = isPct ? '' : '%';
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</span>';
+                                html += '<span class="yh-opacity-val" style="font-size:11px;font-weight:bold;color:#1abc9c;margin:0 8px;min-width:30px;text-align:right">' + displayVal + displaySuffix + '</span>';
+                                html += '<input type="range" class="yh-set-range" data-key="' + item.k + '" min="' + minV + '" max="' + maxV + '" step="' + stepV + '" value="' + curVal + '" style="width:90px;height:4px;appearance:auto;-webkit-appearance:auto;accent-color:#1abc9c;background:#e8e8e8;border-radius:2px;cursor:pointer;flex-shrink:0">';
+                            } else if (item.btnKw) {
+                                var kwCnt = getKwBlacklist().length;
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<button type="button" class="yh-btn-kw" data-kwpanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (kwCnt ? '管理 (' + kwCnt + ')' : '管理') + '</button>';
+                            } else if (item.btnPhrase) {
+                                var phrCnt = getQuickPhrases().length;
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<button type="button" class="yh-btn-phrase" data-phrasepanel="1" style="height:30px;padding:0 12px;border:none;border-radius:999px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;font-size:12px;font-weight:bold;cursor:pointer;flex-shrink:0">' + (phrCnt ? '管理 (' + phrCnt + ')' : '管理') + '</button>';
+                            } else if (item.color) {
+                                var curColor = S[item.k] || '#1abc9c';
+                                html += '<span style="font-size:12px;color:#555;flex:1;min-width:0">' + label + '</span>';
+                                html += '<input type="color" class="yh-set-color" data-key="' + item.k + '" value="' + curColor + '" style="width:28px;height:28px;padding:0;border:2px solid #e8e8e8;border-radius:6px;cursor:pointer;background:none;flex-shrink:0">';
+                            } else {
+                                var checked = S[item.k] ? 'checked' : '';
+                                var isOn = S[item.k] ? 1 : 0;
+                                html += '<span style="font-size:12px;color:#' + (isSub ? '888' : '333') + ';flex:1;min-width:0">' + label + '</span>';
+                                html += '<label style="position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;cursor:pointer">';
+                                html += '<input type="checkbox" class="yh-set" data-key="' + item.k + '" ' + checked + ' data-refresh="' + (item.refresh||'') + '" style="opacity:0;width:0;height:0;position:absolute">';
+                                html += '<span class="yh-toggle-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:' + (isOn ? '#1abc9c' : '#d5d5d5') + ';border-radius:20px;transition:background .25s"></span>';
+                                html += '<span class="yh-toggle-knob" style="position:absolute;content:\"\";height:16px;width:16px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:' + (isOn ? 'translateX(14px)' : 'translateX(0)') + '"></span>';
+                                html += '</label>';
+                            }
+                            html += '</div>';
+                        });
+                        html += '</div>';
                     }
-                    html += '</div>';
                 });
                 html += '</div></div>';
             });
@@ -2840,6 +2901,21 @@ function f_threadView(force) {
                             if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
                         });
                     })(_groupTitles[_gti]);
+                }
+                // 子分类标题展开/收起
+                var _sgTitles = box.querySelectorAll('.yh-subgroup-title');
+                for (var _sgi = 0; _sgi < _sgTitles.length; _sgi++) {
+                    (function(sgt) {
+                        sgt.addEventListener('click', function() {
+                            var sg = sgt.getAttribute('data-sg');
+                            var body = box.querySelector('.yh-subgroup-body[data-sg="' + sg + '"]');
+                            var arrow = sgt.querySelector('.yh-subgroup-arrow');
+                            if (!body) return;
+                            var isOpen = body.style.display !== 'none';
+                            body.style.display = isOpen ? 'none' : 'block';
+                            if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+                        });
+                    })(_sgTitles[_sgi]);
                 }
                 // 关键词管理按钮：打开关键词屏蔽弹窗
                 var kwBtns = box.querySelectorAll('.yh-btn-kw');
@@ -3416,5 +3492,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.233 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.234 by Embrace/19299');
 })();
