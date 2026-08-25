@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         妖火网增强插件
 // @namespace    https://github.com/yaohuo-scripts
-// @version      0.9.235
+// @version      0.9.236
 // @author       Embrace (ID:19299)
 // @description  妖火网(yaohuo.me) 增强插件 by Embrace/19299
 // @match        https://yaohuo.me/*
@@ -219,7 +219,7 @@
         newTab: 1, topBtn: 1, lazyLoad: 1, repeat: 1, repStyle: 1, splitView: 0, ubbHelp: 1, levelBtn: 1, eatMeat: 1, opTag: 1, threadView: 1,
         fillReply: 0, fillReplyAuto: 0, btnOpacity: 50, btnSize: 40, showTime: 1, splitRatio: 40, splitPadding: 2, imgZoom: 1, imgBlur: 1, imgZoomSize: 60, loadAll: 1, opColor: "#1abc9c", plusColor: "#1abc9c", autoUpdate: 1, floatPreview: 0, blacklist: 1, kwBlacklist: 1, pullRefresh: 1,
     };
-    var YH_VERSION = '0.9.235';
+    var YH_VERSION = '0.9.236';
     // 官方 raw（国外/开代理）
     var YH_UPDATE_URL = 'https://raw.githubusercontent.com/Embracc/yaohuo-enhancer/refs/heads/main/yaohuo-enhancer.user.js';
     // 国内安装/检测主链：须代理到 main 最新，勿用会缓存旧版的镜像
@@ -2745,7 +2745,7 @@ function f_threadView(force) {
                 if (!groups[it.g]) groups[it.g] = [];
                 groups[it.g].push(it);
             });
-            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.235</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
+            var html = '<div style="padding:14px 16px;background:linear-gradient(135deg,#1abc9c,#16a085);color:#fff;font-size:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;border-radius:14px 14px 0 0"><span>⚙ 设置 <small style="opacity:.8;font-weight:normal;font-size:11px">v0.9.236</small></span><span class="yh-settings-close" style="cursor:pointer;font-size:22px;line-height:1;padding:0 4px;opacity:.8;transition:opacity .15s">&times;</span></div><div style="padding:6px 14px 14px">';
             var groupNames = {浏览:'浏览', 分屏:'分屏', 界面:'界面', 评论:'评论', 更新:'更新'};
             var groupOrder = ['浏览', '分屏', '界面', '评论', '更新'];
             groupOrder.forEach(function(g) {
@@ -3476,6 +3476,7 @@ function f_threadView(force) {
             state.active = false;
             state.pulling = false;
             if (willRefresh) {
+                // 显示「刷新中…」动画
                 var ind = ensureIndicator();
                 if (ind) {
                     ind.style.transition = 'height .15s';
@@ -3483,10 +3484,14 @@ function f_threadView(force) {
                     var txt = ind && ind.querySelector('#yh-pull-text');
                     if (txt) txt.textContent = '刷新中…';
                 }
-                // 保存滚动位置，刷新后恢复
-                try { sessionStorage.setItem('yh_pull_scroll', String(window.pageYOffset || document.documentElement.scrollTop || 0)); } catch(e) {}
-                // 先显示"刷新中…"动画 300ms，再刷新（避免直接跳成浏览器原生刷新，无反馈）
-                setTimeout(function() { location.reload(); }, 300);
+                // 优先局部刷新（不重新打开页面），失败才整页刷新
+                doLocalRefresh(function(ok) {
+                    if (!ok) location.reload();
+                    else {
+                        try { sessionStorage.removeItem('yh_pull_scroll'); } catch(e) {}
+                        setTimeout(function() { try { resetPull(); } catch(e2) {} }, 500);
+                    }
+                });
             } else if (state.cur > 0) {
                 resetPull();
             }
@@ -3495,6 +3500,61 @@ function f_threadView(force) {
         document.addEventListener('touchcancel', function() {
             if (state.active) { state.active = false; if (state.pulling) resetPull(); state.pulling = false; }
         }, { passive: true, capture: true });
+    }
+
+    // 下拉刷新：局部刷新列表内容（不重新打开整页）
+    function doLocalRefresh(cb) {
+        if (typeof cb !== 'function') cb = function() {};
+        // 记录当前滚动位置
+        var scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+        xhr({
+            method: 'GET',
+            url: location.href,
+            timeout: 15000,
+            onload: function(res) {
+                try {
+                    var html = res.responseText || '';
+                    if (!html) { cb(false); return; }
+                    var parser = document.createElement('div');
+                    parser.innerHTML = html;
+                    // 列表页：多个 .listdata 兄弟节点
+                    var newItems = parser.querySelectorAll('.listdata');
+                    var oldItems = document.querySelectorAll('.listdata');
+                    if (oldItems.length && newItems.length) {
+                        var parent = oldItems[0].parentNode;
+                        // 锚点 = 第一个旧项的下一个兄弟（保留相对位置）
+                        var anchor = oldItems[0].nextSibling;
+                        // 删除所有旧列表项
+                        for (var i = 0; i < oldItems.length; i++) {
+                            if (oldItems[i].parentNode) oldItems[i].parentNode.removeChild(oldItems[i]);
+                        }
+                        // 在锚点前插入所有新列表项
+                        for (var j = 0; j < newItems.length; j++) {
+                            parent.insertBefore(newItems[j], anchor);
+                        }
+                        try { run(); } catch (e2) {}
+                        setTimeout(function() { window.scrollTo(0, scrollY); }, 50);
+                        cb(true);
+                        return;
+                    }
+                    // 主页：单个 .list 容器，替换 innerHTML
+                    var newMainList = parser.querySelector('.list');
+                    var oldMainList = document.querySelector('.list');
+                    if (oldMainList && newMainList) {
+                        oldMainList.innerHTML = newMainList.innerHTML;
+                        try { run(); } catch (e3) {}
+                        setTimeout(function() { window.scrollTo(0, scrollY); }, 50);
+                        cb(true);
+                        return;
+                    }
+                    cb(false);
+                } catch (e) {
+                    cb(false);
+                }
+            },
+            onerror: function() { cb(false); },
+            ontimeout: function() { cb(false); }
+        });
     }
 
     // 初始化
@@ -3532,5 +3592,5 @@ function f_threadView(force) {
         if (document.documentElement) mo.observe(document.documentElement, {childList:true, subtree:true});
     } catch (e) {}
 
-    console.log('[YH] 初始化完成 v0.9.235 by Embrace/19299');
+    console.log('[YH] 初始化完成 v0.9.236 by Embrace/19299');
 })();
