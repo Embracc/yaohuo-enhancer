@@ -3200,8 +3200,8 @@ function f_threadView(force) {
             if (img.getAttribute('data-yh-zoom') === '1') continue;
             img.setAttribute('data-yh-zoom', '1');
             img.style.cursor = 'zoom-in';
-            // 模糊预览模式：默认模糊，点击打开全屏原图
-            if (S.imgBlur) {
+            // 模糊预览：只对帖子正文图片生效，评论区图片不模糊
+            if (S.imgBlur && img.closest('.bbscontent')) {
                 img.setAttribute('data-yh-blur', '1');
                 img.style.filter = 'blur(14px)';
                 img.style.transition = 'filter .2s';
